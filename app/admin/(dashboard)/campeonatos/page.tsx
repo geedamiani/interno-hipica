@@ -1,7 +1,18 @@
 import { createClient } from "@/lib/supabase/server"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Trophy } from "lucide-react"
+import { Trophy, Plus, ChevronRight } from "lucide-react"
+import Link from "next/link"
+import type { Tables } from "@/lib/database.types"
+
+type TournamentWithCategory = Tables<"tournaments"> & {
+  categories: { name: string } | null
+}
+
+const statusMap: Record<string, { label: string; variant: "default" | "outline" | "secondary" }> = {
+  active: { label: "Ativo", variant: "default" },
+  finished: { label: "Encerrado", variant: "secondary" },
+  draft: { label: "Rascunho", variant: "outline" },
+}
 
 export default async function AdminTournamentsPage() {
   const supabase = await createClient()
@@ -9,42 +20,60 @@ export default async function AdminTournamentsPage() {
   const { data: tournaments } = await supabase
     .from("tournaments")
     .select("*, categories(name)")
-    .order("created_at", { ascending: false })
+    .order("year", { ascending: false })
+    .order("semester", { ascending: false })
+    .returns<TournamentWithCategory[]>()
 
   return (
-    <div className="p-4 lg:p-8">
-      <div className="mb-6">
-        <h1 className="font-sans text-2xl font-bold">Campeonatos</h1>
-        <p className="text-sm text-muted-foreground">Gerenciar campeonatos</p>
+    <div className="px-4 py-5">
+      <div className="mb-5 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold">Torneios</h1>
+          <p className="text-sm text-muted-foreground">Gerenciar campeonatos</p>
+        </div>
+        <Link
+          href="/admin/campeonatos/novo"
+          className="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground"
+        >
+          <Plus className="h-4 w-4" />
+          Novo
+        </Link>
       </div>
 
-      <div className="flex flex-col gap-3">
-        {(tournaments || []).map((t) => {
-          const category = t.categories as Record<string, unknown> | null
-          return (
-            <Card key={t.id}>
-              <CardContent className="flex items-center gap-3 py-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+      {(!tournaments || tournaments.length === 0) ? (
+        <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
+          <Trophy className="h-10 w-10" />
+          <p className="text-sm">Nenhum torneio cadastrado.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {tournaments.map((t) => {
+            const st = statusMap[t.status || "draft"] || statusMap.draft
+            return (
+              <Link
+                key={t.id}
+                href={`/admin/campeonatos/${t.id}`}
+                className="flex items-center gap-3 rounded-xl bg-card p-4 transition-colors active:bg-muted/50"
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <Trophy className="h-5 w-5 text-primary" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">{t.name}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {category?.name as string || ""} - {t.year}/{t.semester}
-                    {t.location && ` - ${t.location}`}
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-sm font-semibold">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.categories?.name || ""} &middot; {t.year}/{t.semester}
+                    {t.location ? ` &middot; ${t.location}` : ""}
                   </p>
                 </div>
-                <Badge variant={t.status === "active" ? "default" : "outline"} className="text-[10px]">
-                  {t.status === "active" ? "Ativo" : t.status === "finished" ? "Encerrado" : "Rascunho"}
+                <Badge variant={st.variant} className="shrink-0 text-[10px]">
+                  {st.label}
                 </Badge>
-              </CardContent>
-            </Card>
-          )
-        })}
-        {(!tournaments || tournaments.length === 0) && (
-          <p className="py-8 text-center text-sm text-muted-foreground">Nenhum campeonato cadastrado.</p>
-        )}
-      </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

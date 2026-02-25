@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { HomeContent } from "@/components/home-content"
+import type { HomeContentProps } from "@/components/home-content"
 
 export const dynamic = "force-dynamic"
 
@@ -51,18 +52,12 @@ export default async function HomePage() {
     ])
 
     // Build top scorers
-    let topScorersList: {
-      name: string
-      nickname: string | null
-      teamShort: string | null
-      teamColor: string | null
-      teamLogoUrl: string | null
-      goals: number
-    }[] = []
+    let topScorersList: HomeContentProps["topScorers"] = []
 
     if (events && events.length > 0) {
       const goalCounts = new Map<string, { playerId: string; teamId: string; goals: number }>()
       for (const e of events) {
+        if (!e.player_id || !e.team_id) continue
         const existing = goalCounts.get(e.player_id)
         if (existing) existing.goals++
         else goalCounts.set(e.player_id, { playerId: e.player_id, teamId: e.team_id, goals: 1 })
@@ -79,18 +74,18 @@ export default async function HomePage() {
         supabase.from("teams").select("id, short_name, primary_color, logo_url").in("id", teamIds),
       ])
 
-      const pMap = new Map((playersRes.data || []).map((p: Record<string, unknown>) => [p.id as string, p]))
-      const tMap = new Map((teamsRes.data || []).map((t: Record<string, unknown>) => [t.id as string, t]))
+      const pMap = new Map((playersRes.data || []).map((p) => [p.id, p]))
+      const tMap = new Map((teamsRes.data || []).map((t) => [t.id, t]))
 
       topScorersList = topPlayers.map((tp) => {
         const p = pMap.get(tp.playerId)
         const t = tMap.get(tp.teamId)
         return {
-          name: (p?.name as string) || "Desconhecido",
-          nickname: (p?.nickname as string) || null,
-          teamShort: (t?.short_name as string) || null,
-          teamColor: (t?.primary_color as string) || null,
-          teamLogoUrl: (t?.logo_url as string) || null,
+          name: p?.name || "Desconhecido",
+          nickname: p?.nickname || null,
+          teamShort: t?.short_name || null,
+          teamColor: t?.primary_color || null,
+          teamLogoUrl: t?.logo_url || null,
           goals: tp.goals,
         }
       })
@@ -99,7 +94,7 @@ export default async function HomePage() {
     return (
       <HomeContent
         tournament={tournament}
-        standings={standings || []}
+        standings={(standings || []) as HomeContentProps["standings"]}
         nextMatches={nextMatches || []}
         topScorers={topScorersList}
       />

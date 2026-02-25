@@ -19,16 +19,16 @@ export default async function ArtilhariaPage() {
     // Aggregate by player
     const playerMap = new Map<string, { playerId: string; teamId: string; goals: number; assists: number }>()
     for (const e of events) {
-      const key = e.player_id as string
-      const existing = playerMap.get(key)
+      if (!e.player_id || !e.team_id) continue
+      const existing = playerMap.get(e.player_id)
       const isAssist = e.event_type === "assist"
       if (existing) {
         if (isAssist) existing.assists++
         else existing.goals++
       } else {
-        playerMap.set(key, {
-          playerId: key,
-          teamId: e.team_id as string,
+        playerMap.set(e.player_id, {
+          playerId: e.player_id,
+          teamId: e.team_id,
           goals: isAssist ? 0 : 1,
           assists: isAssist ? 1 : 0,
         })
@@ -40,24 +40,24 @@ export default async function ArtilhariaPage() {
     const teamIds = [...new Set(allPlayers.map((p) => p.teamId))]
 
     const [playersRes, teamsRes] = await Promise.all([
-      supabase.from("players").select("id, name, nickname, shirt_number").in("id", playerIds),
+      supabase.from("players").select("id, name, nickname").in("id", playerIds),
       supabase.from("teams").select("id, name, short_name, primary_color, logo_url").in("id", teamIds),
     ])
 
-    const pMap = new Map((playersRes.data || []).map((p: Record<string, unknown>) => [p.id as string, p]))
-    const tMap = new Map((teamsRes.data || []).map((t: Record<string, unknown>) => [t.id as string, t]))
+    const pMap = new Map((playersRes.data || []).map((p) => [p.id, p]))
+    const tMap = new Map((teamsRes.data || []).map((t) => [t.id, t]))
 
     const scorers = allPlayers.map((ap) => {
       const p = pMap.get(ap.playerId)
       const t = tMap.get(ap.teamId)
       return {
-        name: (p?.name as string) || "Desconhecido",
-        nickname: (p?.nickname as string) || null,
-        shirtNumber: (p?.shirt_number as number) || null,
-        teamName: (t?.name as string) || "",
-        teamShort: (t?.short_name as string) || null,
-        teamColor: (t?.primary_color as string) || null,
-        teamLogo: (t?.logo_url as string) || null,
+        name: p?.name || "Desconhecido",
+        nickname: p?.nickname || null,
+        shirtNumber: null,
+        teamName: t?.name || "",
+        teamShort: t?.short_name || null,
+        teamColor: t?.primary_color || null,
+        teamLogo: t?.logo_url || null,
         goals: ap.goals,
         assists: ap.assists,
       }

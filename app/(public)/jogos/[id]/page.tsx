@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import { MatchDetailContent } from "@/components/match-detail-content"
+import type { MatchDetailContentProps } from "@/components/match-detail-content"
 
 export const dynamic = "force-dynamic"
 
@@ -20,9 +21,14 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
   const { data: events } = await supabase
     .from("match_events")
-    .select("*, players(name, nickname, shirt_number)")
+    .select("*, players(name, nickname)")
     .eq("match_id", id)
     .order("minute", { ascending: true })
 
-  return <MatchDetailContent match={match} events={events || []} />
+  return (
+    <MatchDetailContent
+      match={match as unknown as MatchDetailContentProps["match"]}
+      events={(events || []) as MatchDetailContentProps["events"]}
+    />
+  )
 }

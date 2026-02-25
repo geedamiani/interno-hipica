@@ -18,14 +18,20 @@ export default async function TeamsPage() {
       return <TeamsContent teams={[]} />
     }
 
-    const { data: teams } = await supabase
-      .from("teams")
-      .select("id, name, short_name, primary_color, logo_url, group_name")
+    const { data: tournamentTeams } = await supabase
+      .from("tournament_teams")
+      .select("group_name, teams(id, name, short_name, primary_color, logo_url)")
       .eq("tournament_id", tournament.id)
-      .order("group_name", { ascending: true })
-      .order("name", { ascending: true })
+      .order("group_name")
 
-    return <TeamsContent teams={teams || []} />
+    const teams = (tournamentTeams || [])
+      .filter((tt) => tt.teams)
+      .map((tt) => {
+        const t = tt.teams as { id: string; name: string; short_name: string | null; primary_color: string | null; logo_url: string | null }
+        return { ...t, group_name: tt.group_name }
+      })
+
+    return <TeamsContent teams={teams} />
   } catch (error) {
     console.log("[v0] Times page error:", error)
     return <TeamsContent teams={[]} />

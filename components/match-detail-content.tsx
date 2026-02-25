@@ -4,10 +4,21 @@ import Link from "next/link"
 import { ArrowLeft, MapPin, Clock } from "lucide-react"
 import { TeamBadge } from "@/components/team-badge"
 import { cn } from "@/lib/utils"
+import type { Tables } from "@/lib/database.types"
 
-interface MatchDetailContentProps {
-  match: Record<string, unknown>
-  events: Record<string, unknown>[]
+type MatchWithTeamsAndRound = Tables<"matches"> & {
+  home_team: Pick<Tables<"teams">, "id" | "name" | "short_name" | "primary_color" | "logo_url"> | null
+  away_team: Pick<Tables<"teams">, "id" | "name" | "short_name" | "primary_color" | "logo_url"> | null
+  rounds: (Pick<Tables<"rounds">, "round_number"> & { stages: Pick<Tables<"stages">, "name"> | null }) | null
+}
+
+type EventWithPlayer = Tables<"match_events"> & {
+  players: Pick<Tables<"players">, "name" | "nickname"> | null
+}
+
+export interface MatchDetailContentProps {
+  match: MatchWithTeamsAndRound
+  events: EventWithPlayer[]
 }
 
 function formatDate(dateStr: string) {
@@ -30,14 +41,14 @@ const eventLabels: Record<string, string> = {
 }
 
 export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
-  const homeTeam = match.home_team as Record<string, unknown>
-  const awayTeam = match.away_team as Record<string, unknown>
-  const round = match.rounds as Record<string, unknown> | null
-  const stages = round?.stages as Record<string, unknown> | null
+  const homeTeam = match.home_team
+  const awayTeam = match.away_team
+  const round = match.rounds
+  const stages = round?.stages
   const isFinished = match.status === "finished"
 
-  const homeEvents = events.filter((e) => e.team_id === (homeTeam?.id as string))
-  const awayEvents = events.filter((e) => e.team_id === (awayTeam?.id as string))
+  const homeEvents = events.filter((e) => e.team_id === homeTeam?.id)
+  const awayEvents = events.filter((e) => e.team_id === awayTeam?.id)
 
   return (
     <main className="bg-background">
@@ -49,7 +60,7 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
             Jogos
           </Link>
           <span className="text-xs text-muted-foreground">
-            {stages?.name ? `${stages.name as string} - ` : ""}Rodada {round?.round_number as number}
+            {stages?.name ? `${stages.name} - ` : ""}Rodada {round?.round_number}
           </span>
         </div>
       </header>
@@ -59,14 +70,14 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
         <div className="flex items-center justify-center gap-4">
           <div className="flex flex-col items-center gap-2">
             <TeamBadge
-              name={homeTeam?.name as string}
-              shortName={homeTeam?.short_name as string}
-              primaryColor={homeTeam?.primary_color as string}
-              logoUrl={homeTeam?.logo_url as string}
+              name={homeTeam?.name || ""}
+              shortName={homeTeam?.short_name}
+              primaryColor={homeTeam?.primary_color}
+              logoUrl={homeTeam?.logo_url}
               size="lg"
             />
             <span className="text-xs font-semibold text-foreground">
-              {homeTeam?.short_name as string}
+              {homeTeam?.short_name}
             </span>
           </div>
 
@@ -74,11 +85,11 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
             {isFinished ? (
               <div className="flex items-center gap-2">
                 <span className="font-mono text-4xl font-bold text-foreground">
-                  {match.home_score as number}
+                  {match.home_score}
                 </span>
                 <span className="text-lg text-muted-foreground">x</span>
                 <span className="font-mono text-4xl font-bold text-foreground">
-                  {match.away_score as number}
+                  {match.away_score}
                 </span>
               </div>
             ) : (
@@ -91,14 +102,14 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
 
           <div className="flex flex-col items-center gap-2">
             <TeamBadge
-              name={awayTeam?.name as string}
-              shortName={awayTeam?.short_name as string}
-              primaryColor={awayTeam?.primary_color as string}
-              logoUrl={awayTeam?.logo_url as string}
+              name={awayTeam?.name || ""}
+              shortName={awayTeam?.short_name}
+              primaryColor={awayTeam?.primary_color}
+              logoUrl={awayTeam?.logo_url}
               size="lg"
             />
             <span className="text-xs font-semibold text-foreground">
-              {awayTeam?.short_name as string}
+              {awayTeam?.short_name}
             </span>
           </div>
         </div>
@@ -108,14 +119,14 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
           {match.match_date && (
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              {formatDate(match.match_date as string)}
-              {match.match_time && ` - ${formatTime(match.match_time as string)}`}
+              {formatDate(match.match_date)}
+              {match.match_time && ` - ${formatTime(match.match_time)}`}
             </span>
           )}
           {match.field_number && (
             <span className="flex items-center gap-1">
               <MapPin className="h-3 w-3" />
-              Campo {match.field_number as number}
+              Campo {match.field_number}
             </span>
           )}
         </div>
@@ -129,14 +140,14 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
           </div>
           <div className="divide-y divide-border/50">
             {events.map((event) => {
-              const player = event.players as Record<string, unknown> | null
-              const isHome = event.team_id === (homeTeam?.id as string)
-              const type = event.event_type as string
+              const player = event.players
+              const isHome = event.team_id === homeTeam?.id
+              const type = event.event_type
               const isGoal = type === "goal" || type === "penalty_goal"
               const isCard = type === "yellow_card" || type === "red_card"
               return (
                 <div
-                  key={event.id as string}
+                  key={event.id}
                   className={cn(
                     "flex items-center gap-2 px-4 py-2",
                     isHome ? "flex-row" : "flex-row-reverse"
@@ -156,7 +167,7 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
                   </div>
                   <div className={cn("flex-1", !isHome && "text-right")}>
                     <span className="text-xs font-medium text-foreground">
-                      {player?.nickname as string || player?.name as string || ""}
+                      {player?.nickname || player?.name || ""}
                     </span>
                     <span className="ml-1 text-[10px] text-muted-foreground">
                       {eventLabels[type] || type}
@@ -164,7 +175,7 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
                   </div>
                   {event.minute != null && (
                     <span className="font-mono text-[10px] text-muted-foreground">
-                      {event.minute as number}{"'"}
+                      {event.minute}{"'"}
                     </span>
                   )}
                 </div>
@@ -182,7 +193,7 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
           </div>
           <div className="divide-y divide-border/50 px-4 pb-4">
             {[
-              { label: "Gols", home: homeEvents.filter(e => ["goal", "penalty_goal"].includes(e.event_type as string)).length, away: awayEvents.filter(e => ["goal", "penalty_goal"].includes(e.event_type as string)).length },
+              { label: "Gols", home: homeEvents.filter(e => ["goal", "penalty_goal"].includes(e.event_type)).length, away: awayEvents.filter(e => ["goal", "penalty_goal"].includes(e.event_type)).length },
               { label: "Cartoes Amarelos", home: homeEvents.filter(e => e.event_type === "yellow_card").length, away: awayEvents.filter(e => e.event_type === "yellow_card").length },
               { label: "Cartoes Vermelhos", home: homeEvents.filter(e => e.event_type === "red_card").length, away: awayEvents.filter(e => e.event_type === "red_card").length },
             ].map((stat) => (

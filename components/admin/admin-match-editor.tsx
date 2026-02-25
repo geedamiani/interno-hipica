@@ -13,12 +13,18 @@ import { ArrowLeft, Plus, Trash2, Save } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 import { toast } from "sonner"
+import type { Tables } from "@/lib/database.types"
+
+type MatchWithTeams = Tables<"matches"> & {
+  home_team: Tables<"teams"> | null
+  away_team: Tables<"teams"> | null
+}
 
 interface AdminMatchEditorProps {
-  match: Record<string, unknown>
-  homePlayers: Record<string, unknown>[]
-  awayPlayers: Record<string, unknown>[]
-  events: Record<string, unknown>[]
+  match: MatchWithTeams
+  homePlayers: Tables<"players">[]
+  awayPlayers: Tables<"players">[]
+  events: Tables<"match_events">[]
 }
 
 const eventTypes = [
@@ -44,20 +50,21 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  const homeTeam = match.home_team as Record<string, unknown>
-  const awayTeam = match.away_team as Record<string, unknown>
+  const homeTeam = match.home_team
+  const awayTeam = match.away_team
 
-  const [homeScore, setHomeScore] = useState<number>((match.home_score as number) ?? 0)
-  const [awayScore, setAwayScore] = useState<number>((match.away_score as number) ?? 0)
-  const [status, setStatus] = useState<string>((match.status as string) || "scheduled")
+  const [homeScore, setHomeScore] = useState<number>(match.home_score ?? 0)
+  const [awayScore, setAwayScore] = useState<number>(match.away_score ?? 0)
+  const [status, setStatus] = useState<string>(match.status || "scheduled")
+  const [fieldNumber, setFieldNumber] = useState<string>(match.field_number?.toString() || "")
 
   const [matchEvents, setMatchEvents] = useState<MatchEvent[]>(
     initialEvents.map((e) => ({
-      id: e.id as string,
-      event_type: e.event_type as string,
-      player_id: e.player_id as string,
-      team_id: e.team_id as string,
-      minute: e.minute as number | null,
+      id: e.id,
+      event_type: e.event_type,
+      player_id: e.player_id || "",
+      team_id: e.team_id || "",
+      minute: e.minute,
     }))
   )
   const [deletedEventIds, setDeletedEventIds] = useState<string[]>([])
@@ -93,27 +100,25 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
     startTransition(async () => {
       const supabase = createClient()
 
-      // Update match score and status
       const { error: matchError } = await supabase
         .from("matches")
         .update({
           home_score: homeScore,
           away_score: awayScore,
           status,
+          field_number: fieldNumber ? parseInt(fieldNumber) : null,
         })
-        .eq("id", match.id as string)
+        .eq("id", match.id)
 
       if (matchError) {
         toast.error("Erro ao salvar resultado: " + matchError.message)
         return
       }
 
-      // Delete removed events
       for (const id of deletedEventIds) {
         await supabase.from("match_events").delete().eq("id", id)
       }
 
-      // Upsert events
       for (const event of matchEvents) {
         if (!event.player_id) continue
         if (event.id && !event.isNew) {
@@ -125,7 +130,7 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
           }).eq("id", event.id)
         } else {
           await supabase.from("match_events").insert({
-            match_id: match.id as string,
+            match_id: match.id,
             event_type: event.event_type,
             player_id: event.player_id,
             team_id: event.team_id,
@@ -140,23 +145,23 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
     })
   }
 
-  const homeEvents = matchEvents.filter((e) => e.team_id === (homeTeam?.id as string))
-  const awayEvents = matchEvents.filter((e) => e.team_id === (awayTeam?.id as string))
+  const homeEvents = matchEvents.filter((e) => e.team_id === homeTeam?.id)
+  const awayEvents = matchEvents.filter((e) => e.team_id === awayTeam?.id)
 
   return (
-    <div className="p-4 lg:p-8">
+    <div className="px-4 py-5">
       {/* Header */}
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-5 flex items-center gap-3">
         <Link href="/admin/partidas">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">Voltar</span>
-          </Button>
+          <button className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
         </Link>
-        <div>
-          <h1 className="font-sans text-xl font-bold">Editar Partida</h1>
+        <div className="flex-1">
+          <h1 className="text-lg font-bold">Editar Partida</h1>
           <p className="text-xs text-muted-foreground">
-            {homeTeam?.name as string} vs {awayTeam?.name as string}
+            {homeTeam?.name} vs {awayTeam?.name}
+            {fieldNumber ? ` · Campo ${fieldNumber}` : ""}
           </p>
         </div>
       </div>
@@ -167,13 +172,13 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
           <div className="flex items-center justify-center gap-6">
             <div className="flex flex-col items-center gap-2">
               <TeamBadge
-                name={homeTeam?.name as string}
-                shortName={homeTeam?.short_name as string}
-                primaryColor={homeTeam?.primary_color as string}
-                logoUrl={homeTeam?.logo_url as string}
+                name={homeTeam?.name ?? ""}
+                shortName={homeTeam?.short_name ?? null}
+                primaryColor={homeTeam?.primary_color ?? null}
+                logoUrl={homeTeam?.logo_url ?? null}
                 size="lg"
               />
-              <span className="text-xs font-semibold">{homeTeam?.short_name as string}</span>
+              <span className="text-xs font-semibold">{homeTeam?.short_name}</span>
               <Input
                 type="number"
                 min={0}
@@ -187,13 +192,13 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
 
             <div className="flex flex-col items-center gap-2">
               <TeamBadge
-                name={awayTeam?.name as string}
-                shortName={awayTeam?.short_name as string}
-                primaryColor={awayTeam?.primary_color as string}
-                logoUrl={awayTeam?.logo_url as string}
+                name={awayTeam?.name ?? ""}
+                shortName={awayTeam?.short_name ?? null}
+                primaryColor={awayTeam?.primary_color ?? null}
+                logoUrl={awayTeam?.logo_url ?? null}
                 size="lg"
               />
-              <span className="text-xs font-semibold">{awayTeam?.short_name as string}</span>
+              <span className="text-xs font-semibold">{awayTeam?.short_name}</span>
               <Input
                 type="number"
                 min={0}
@@ -204,11 +209,11 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
             </div>
           </div>
 
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex justify-center gap-3">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs text-center">Status</Label>
               <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-36">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -216,6 +221,18 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
                   <SelectItem value="in_progress">Em andamento</SelectItem>
                   <SelectItem value="finished">Encerrado</SelectItem>
                   <SelectItem value="cancelled">Cancelado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs text-center">Campo</Label>
+              <Select value={fieldNumber} onValueChange={setFieldNumber}>
+                <SelectTrigger className="w-28">
+                  <SelectValue placeholder="—" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Campo 1</SelectItem>
+                  <SelectItem value="2">Campo 2</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -229,12 +246,12 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm">
-              Eventos - {homeTeam?.short_name as string}
+              Eventos - {homeTeam?.short_name}
             </CardTitle>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => addEvent(homeTeam?.id as string)}
+              onClick={() => addEvent(homeTeam?.id ?? "")}
             >
               <Plus className="mr-1 h-3 w-3" /> Adicionar
             </Button>
@@ -244,7 +261,7 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
               <p className="py-4 text-center text-xs text-muted-foreground">Nenhum evento registrado.</p>
             )}
             {matchEvents.map((event, i) => {
-              if (event.team_id !== (homeTeam?.id as string)) return null
+              if (event.team_id !== homeTeam?.id) return null
               return (
                 <EventRow
                   key={event.id || `new-${i}`}
@@ -263,12 +280,12 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm">
-              Eventos - {awayTeam?.short_name as string}
+              Eventos - {awayTeam?.short_name}
             </CardTitle>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => addEvent(awayTeam?.id as string)}
+              onClick={() => addEvent(awayTeam?.id ?? "")}
             >
               <Plus className="mr-1 h-3 w-3" /> Adicionar
             </Button>
@@ -278,7 +295,7 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
               <p className="py-4 text-center text-xs text-muted-foreground">Nenhum evento registrado.</p>
             )}
             {matchEvents.map((event, i) => {
-              if (event.team_id !== (awayTeam?.id as string)) return null
+              if (event.team_id !== awayTeam?.id) return null
               return (
                 <EventRow
                   key={event.id || `new-${i}`}
@@ -295,14 +312,14 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
       </div>
 
       {/* Save */}
-      <div className="mt-6 flex justify-end gap-3">
-        <Link href="/admin/partidas">
-          <Button variant="outline">Cancelar</Button>
-        </Link>
-        <Button onClick={handleSave} disabled={isPending}>
+      <div className="mt-5 flex gap-3">
+        <Button className="flex-1" onClick={handleSave} disabled={isPending}>
           <Save className="mr-2 h-4 w-4" />
           {isPending ? "Salvando..." : "Salvar Resultado"}
         </Button>
+        <Link href="/admin/partidas">
+          <Button variant="outline">Cancelar</Button>
+        </Link>
       </div>
     </div>
   )
@@ -317,7 +334,7 @@ function EventRow({
 }: {
   event: MatchEvent
   index: number
-  players: Record<string, unknown>[]
+  players: Tables<"players">[]
   onUpdate: (index: number, field: keyof MatchEvent, value: string | number | null) => void
   onRemove: (index: number) => void
 }) {
@@ -346,9 +363,9 @@ function EventRow({
         </SelectTrigger>
         <SelectContent>
           {players.map((p) => (
-            <SelectItem key={p.id as string} value={p.id as string}>
+            <SelectItem key={p.id} value={p.id}>
               {p.shirt_number != null ? `#${p.shirt_number} ` : ""}
-              {(p.nickname as string) || (p.name as string)}
+              {p.nickname || p.name}
             </SelectItem>
           ))}
         </SelectContent>
@@ -371,5 +388,3 @@ function EventRow({
     </div>
   )
 }
-
-

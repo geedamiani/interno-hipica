@@ -12,7 +12,7 @@ export default async function AdminMatchesPage() {
 
   const tournamentId = tournament?.id || ""
 
-  const [{ data: rounds }, { data: matches }, { data: teams }] = await Promise.all([
+  const [{ data: rounds }, { data: matches }, { data: tournamentTeams }] = await Promise.all([
     supabase
       .from("rounds")
       .select("*, stages(*)")
@@ -25,16 +25,20 @@ export default async function AdminMatchesPage() {
       .order("match_date", { ascending: true })
       .order("match_time", { ascending: true }),
     supabase
-      .from("teams")
-      .select("id, name, short_name")
+      .from("tournament_teams")
+      .select("teams(id, name, short_name)")
       .eq("tournament_id", tournamentId),
   ])
+
+  const teams = (tournamentTeams || [])
+    .filter((tt) => tt.teams)
+    .map((tt) => tt.teams as { id: string; name: string; short_name: string | null })
 
   return (
     <AdminMatchesList
       rounds={rounds || []}
       matches={matches || []}
-      teams={teams || []}
+      teams={teams}
       tournamentId={tournamentId}
     />
   )

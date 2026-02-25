@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { AdminBottomNav } from "@/components/admin/admin-bottom-nav"
 
 export default function AdminDashboardLayout({
   children,
@@ -35,11 +35,9 @@ export default function AdminDashboardLayout({
   }
 
   return (
-    <div className="flex min-h-dvh bg-background">
-      <AdminSidebar userEmail={userEmail} />
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
+    <div className="min-h-dvh bg-background pb-20">
+      <AdminBottomNav userEmail={userEmail} />
+      <main>{children}</main>
     </div>
   )
 }

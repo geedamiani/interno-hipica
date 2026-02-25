@@ -1,16 +1,29 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft, Target } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { TeamBadge } from "@/components/team-badge"
 import { cn } from "@/lib/utils"
+import type { Tables } from "@/lib/database.types"
 
-interface TeamDetailContentProps {
-  team: Record<string, unknown>
-  players: Record<string, unknown>[]
-  standings: Record<string, unknown> | null
-  matches: Record<string, unknown>[]
-  playerEvents: Record<string, unknown>[]
+type TeamRow = Pick<Tables<"teams">, "id" | "name" | "short_name" | "primary_color" | "logo_url"> & { group_name: string | null }
+
+type StandingsRow = Tables<"standings">
+
+type TeamMatch = Tables<"matches"> & {
+  home_team: Pick<Tables<"teams">, "name" | "short_name" | "primary_color" | "logo_url"> | null
+  away_team: Pick<Tables<"teams">, "name" | "short_name" | "primary_color" | "logo_url"> | null
+  rounds: (Pick<Tables<"rounds">, "round_number"> & { stages: Pick<Tables<"stages">, "name"> | null }) | null
+}
+
+type PlayerEvent = Pick<Tables<"match_events">, "event_type" | "player_id">
+
+export interface TeamDetailContentProps {
+  team: TeamRow
+  players: Tables<"players">[]
+  standings: StandingsRow | null
+  matches: TeamMatch[]
+  playerEvents: PlayerEvent[]
 }
 
 function formatDate(dateStr: string) {
@@ -21,7 +34,7 @@ function formatDate(dateStr: string) {
 export function TeamDetailContent({ team, players, standings, matches, playerEvents }: TeamDetailContentProps) {
   const playerStats = new Map<string, { goals: number; assists: number; yellowCards: number; redCards: number }>()
   playerEvents.forEach((e) => {
-    const pid = e.player_id as string
+    const pid = e.player_id
     if (!pid) return
     const stats = playerStats.get(pid) || { goals: 0, assists: 0, yellowCards: 0, redCards: 0 }
     if (e.event_type === "goal" || e.event_type === "penalty_goal") stats.goals++
@@ -41,17 +54,17 @@ export function TeamDetailContent({ team, players, standings, matches, playerEve
         </Link>
         <div className="mt-3 flex items-center gap-3">
           <TeamBadge
-            name={team.name as string}
-            shortName={team.short_name as string}
-            primaryColor={team.primary_color as string}
-            logoUrl={team.logo_url as string}
+            name={team.name}
+            shortName={team.short_name}
+            primaryColor={team.primary_color}
+            logoUrl={team.logo_url}
             size="lg"
           />
           <div>
-            <h1 className="text-lg font-bold text-foreground">{team.name as string}</h1>
+            <h1 className="text-lg font-bold text-foreground">{team.name}</h1>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <span className="rounded bg-muted px-1.5 py-0.5 font-bold uppercase">
-                Grupo {team.group_name as string}
+                Grupo {team.group_name}
               </span>
             </div>
           </div>
@@ -62,10 +75,10 @@ export function TeamDetailContent({ team, players, standings, matches, playerEve
       {standings && (
         <div className="grid grid-cols-4 border-b border-border bg-card">
           {[
-            { label: "Pts", value: (standings.points as number) || 0 },
-            { label: "J", value: (standings.played as number) || 0 },
-            { label: "V", value: (standings.wins as number) || 0 },
-            { label: "SG", value: (standings.goal_difference as number) || 0 },
+            { label: "Pts", value: standings.points || 0 },
+            { label: "J", value: standings.played || 0 },
+            { label: "V", value: standings.wins || 0 },
+            { label: "SG", value: standings.goal_difference || 0 },
           ].map((stat) => (
             <div key={stat.label} className="flex flex-col items-center border-r border-border/50 py-3 last:border-r-0">
               <span className="font-mono text-lg font-bold text-foreground">{stat.value}</span>
@@ -78,10 +91,10 @@ export function TeamDetailContent({ team, players, standings, matches, playerEve
       {standings && (
         <div className="grid grid-cols-4 border-b border-border bg-card">
           {[
-            { label: "E", value: (standings.draws as number) || 0 },
-            { label: "D", value: (standings.losses as number) || 0 },
-            { label: "GP", value: (standings.goals_for as number) || 0 },
-            { label: "GC", value: (standings.goals_against as number) || 0 },
+            { label: "E", value: standings.draws || 0 },
+            { label: "D", value: standings.losses || 0 },
+            { label: "GP", value: standings.goals_for || 0 },
+            { label: "GC", value: standings.goals_against || 0 },
           ].map((stat) => (
             <div key={stat.label} className="flex flex-col items-center border-r border-border/50 py-3 last:border-r-0">
               <span className="font-mono text-lg font-bold text-foreground">{stat.value}</span>
@@ -115,23 +128,23 @@ export function TeamDetailContent({ team, players, standings, matches, playerEve
             </thead>
             <tbody>
               {players.map((player) => {
-                const pid = player.id as string
+                const pid = player.id
                 const stats = playerStats.get(pid)
                 return (
                   <tr key={pid} className="border-b border-border/50 hover:bg-muted/30">
                     <td className="py-2.5 text-center font-mono text-muted-foreground">
-                      {player.shirt_number != null ? player.shirt_number as number : "-"}
+                      {player.shirt_number != null ? player.shirt_number : "-"}
                     </td>
                     <td className="py-2.5">
                       <span className="font-medium text-foreground">
-                        {player.nickname as string || player.name as string}
+                        {player.nickname || player.name}
                       </span>
                       {player.is_captain && (
                         <span className="ml-1 rounded bg-primary px-1 py-0 text-[8px] font-bold text-primary-foreground">C</span>
                       )}
                     </td>
                     <td className="py-2.5 text-center text-muted-foreground">
-                      {player.position as string || "-"}
+                      {player.position || "-"}
                     </td>
                     <td className="py-2.5 text-center font-mono font-bold">
                       {stats?.goals || 0}
@@ -171,17 +184,17 @@ export function TeamDetailContent({ team, players, standings, matches, playerEve
           </div>
           <div className="divide-y divide-border/50">
             {matches.map((match) => {
-              const homeTeam = match.home_team as Record<string, unknown>
-              const awayTeam = match.away_team as Record<string, unknown>
-              const round = match.rounds as Record<string, unknown> | null
-              const stg = round?.stages as Record<string, unknown> | null
+              const homeTeam = match.home_team
+              const awayTeam = match.away_team
+              const round = match.rounds
+              const stg = round?.stages
               const isFinished = match.status === "finished"
-              const isHome = (match.home_team_id as string) === (team.id as string)
+              const isHome = match.home_team_id === team.id
 
               let result: "win" | "draw" | "loss" | null = null
               if (isFinished) {
-                const hScore = match.home_score as number
-                const aScore = match.away_score as number
+                const hScore = match.home_score ?? 0
+                const aScore = match.away_score ?? 0
                 if (hScore === aScore) result = "draw"
                 else if ((isHome && hScore > aScore) || (!isHome && aScore > hScore)) result = "win"
                 else result = "loss"
@@ -189,7 +202,7 @@ export function TeamDetailContent({ team, players, standings, matches, playerEve
 
               return (
                 <Link
-                  key={match.id as string}
+                  key={match.id}
                   href={`/jogos/${match.id}`}
                   className="flex items-center gap-2 px-4 py-2.5 hover:bg-muted/30"
                 >
@@ -203,22 +216,22 @@ export function TeamDetailContent({ team, players, standings, matches, playerEve
                     )}
                   />
                   <div className="flex flex-1 items-center gap-1.5 text-xs">
-                    <span className="font-medium text-foreground">{homeTeam?.short_name as string}</span>
+                    <span className="font-medium text-foreground">{homeTeam?.short_name}</span>
                     {isFinished ? (
                       <span className="font-mono font-bold text-foreground">
-                        {match.home_score as number} x {match.away_score as number}
+                        {match.home_score} x {match.away_score}
                       </span>
                     ) : (
                       <span className="text-muted-foreground">x</span>
                     )}
-                    <span className="font-medium text-foreground">{awayTeam?.short_name as string}</span>
+                    <span className="font-medium text-foreground">{awayTeam?.short_name}</span>
                   </div>
                   <span className="text-[10px] text-muted-foreground">
-                    {stg?.name ? `${stg.name as string} - ` : ""}R{round?.round_number}
+                    {stg?.name ? `${stg.name} - ` : ""}R{round?.round_number}
                   </span>
                   {match.match_date && (
                     <span className="text-[10px] text-muted-foreground">
-                      {formatDate(match.match_date as string)}
+                      {formatDate(match.match_date)}
                     </span>
                   )}
                 </Link>

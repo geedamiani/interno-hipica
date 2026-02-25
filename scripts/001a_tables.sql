@@ -25,19 +25,10 @@ CREATE TABLE IF NOT EXISTS tournaments (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Sponsors (reusable across tournaments)
-CREATE TABLE IF NOT EXISTS sponsors (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  logo_url TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Teams (linked to tournaments, with sponsor)
+-- Teams (linked to tournaments; team name = sponsor name, team logo = sponsor logo)
 CREATE TABLE IF NOT EXISTS teams (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tournament_id UUID REFERENCES tournaments(id) ON DELETE CASCADE,
-  sponsor_id UUID REFERENCES sponsors(id),
   name TEXT NOT NULL,
   short_name TEXT,
   group_name TEXT,
@@ -47,7 +38,7 @@ CREATE TABLE IF NOT EXISTS teams (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Players
+-- Players (linked to teams, different each semester)
 CREATE TABLE IF NOT EXISTS players (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   team_id UUID REFERENCES teams(id) ON DELETE CASCADE,

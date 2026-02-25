@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { MatchesContent } from "@/components/matches-content"
+import type { MatchesContentProps } from "@/components/matches-content"
 
 export const dynamic = "force-dynamic"
 
@@ -34,7 +35,12 @@ export default async function MatchesPage() {
         .order("match_time", { ascending: true }),
     ])
 
-    return <MatchesContent rounds={rounds || []} matches={matches || []} />
+    return (
+      <MatchesContent
+        rounds={(rounds || []) as MatchesContentProps["rounds"]}
+        matches={(matches || []) as unknown as MatchesContentProps["matches"]}
+      />
+    )
   } catch (error) {
     console.log("[v0] Jogos page error:", error)
     return <MatchesContent rounds={[]} matches={[]} />

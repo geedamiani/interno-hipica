@@ -4,9 +4,12 @@ import { useState } from "react"
 import Link from "next/link"
 import { TeamBadge } from "@/components/team-badge"
 import { cn } from "@/lib/utils"
+import type { Tables } from "@/lib/database.types"
+
+type StandingsRow = Tables<"standings">
 
 interface StandingsContentProps {
-  standings: Record<string, unknown>[]
+  standings: StandingsRow[]
 }
 
 export function StandingsContent({ standings }: StandingsContentProps) {
@@ -18,11 +21,11 @@ export function StandingsContent({ standings }: StandingsContentProps) {
     { key: "geral" as const, label: "Geral" },
   ]
 
-  const sortStandings = (list: Record<string, unknown>[]) =>
+  const sortStandings = (list: StandingsRow[]) =>
     [...list].sort((a, b) =>
-      ((b.points as number) || 0) - ((a.points as number) || 0) ||
-      ((b.goal_difference as number) || 0) - ((a.goal_difference as number) || 0) ||
-      ((b.goals_for as number) || 0) - ((a.goals_for as number) || 0)
+      ((b.points) || 0) - ((a.points) || 0) ||
+      ((b.goal_difference) || 0) - ((a.goal_difference) || 0) ||
+      ((b.goals_for) || 0) - ((a.goals_for) || 0)
     )
 
   const filteredStandings = activeTab === "geral"
@@ -83,7 +86,7 @@ export function StandingsContent({ standings }: StandingsContentProps) {
 
               return (
                 <tr
-                  key={team.team_id as string}
+                  key={team.team_id}
                   className="border-b border-border/50 transition-colors hover:bg-muted/30"
                 >
                   <td className="py-3 text-center">
@@ -103,30 +106,30 @@ export function StandingsContent({ standings }: StandingsContentProps) {
                   <td className="py-3 pl-1">
                     <Link href={`/times/${team.team_id}`} className="flex items-center gap-2">
                       <TeamBadge
-                        name={team.team_name as string}
-                        shortName={team.short_name as string}
-                        primaryColor={team.primary_color as string}
-                        logoUrl={team.logo_url as string}
+                        name={team.team_name || ""}
+                        shortName={team.short_name}
+                        primaryColor={team.primary_color}
+                        logoUrl={team.logo_url}
                         size="sm"
                       />
                       <span className="truncate text-xs font-medium text-foreground">
-                        {team.team_name as string}
+                        {team.team_name}
                       </span>
                       {!isGroupView && (
                         <span className="text-[9px] font-medium text-muted-foreground ml-auto shrink-0 pr-1">
-                          {team.group_name as string}
+                          {team.group_name}
                         </span>
                       )}
                     </Link>
                   </td>
-                  <td className="py-3 text-center font-mono text-xs font-bold text-foreground">{(team.points as number) || 0}</td>
-                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{(team.played as number) || 0}</td>
-                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{(team.wins as number) || 0}</td>
-                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{(team.draws as number) || 0}</td>
-                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{(team.losses as number) || 0}</td>
-                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{(team.goals_for as number) || 0}</td>
-                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{(team.goals_against as number) || 0}</td>
-                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{(team.goal_difference as number) || 0}</td>
+                  <td className="py-3 text-center font-mono text-xs font-bold text-foreground">{team.points || 0}</td>
+                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{team.played || 0}</td>
+                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{team.wins || 0}</td>
+                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{team.draws || 0}</td>
+                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{team.losses || 0}</td>
+                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{team.goals_for || 0}</td>
+                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{team.goals_against || 0}</td>
+                  <td className="py-3 text-center font-mono text-xs text-muted-foreground">{team.goal_difference || 0}</td>
                 </tr>
               )
             })}

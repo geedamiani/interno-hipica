@@ -5,11 +5,26 @@ import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 import { TeamBadge } from "@/components/team-badge"
 import { cn } from "@/lib/utils"
+import type { Tables } from "@/lib/database.types"
 
-interface HomeContentProps {
-  tournament: Record<string, unknown> | null
-  standings: Record<string, unknown>[]
-  nextMatches: Record<string, unknown>[]
+type TournamentWithCategory = Pick<Tables<"tournaments">, "id" | "name" | "status" | "year" | "semester" | "location"> & {
+  categories: { name: string } | null
+}
+
+type StandingsRow = Tables<"standings">
+
+type TeamSubset = Pick<Tables<"teams">, "id" | "name" | "short_name" | "primary_color" | "logo_url">
+
+type HomeMatch = Pick<Tables<"matches">, "id" | "match_date" | "match_time" | "home_score" | "away_score" | "status" | "field_number"> & {
+  home_team: TeamSubset | null
+  away_team: TeamSubset | null
+  rounds: (Pick<Tables<"rounds">, "round_number"> & { stages: Pick<Tables<"stages">, "name"> | null }) | null
+}
+
+export interface HomeContentProps {
+  tournament: TournamentWithCategory | null
+  standings: StandingsRow[]
+  nextMatches: HomeMatch[]
   topScorers: {
     name: string
     nickname: string | null
@@ -31,7 +46,7 @@ function formatTime(timeStr: string) {
 
 export function HomeContent({ tournament, standings, nextMatches, topScorers }: HomeContentProps) {
   const [activeTab, setActiveTab] = useState<"geral" | "A" | "B">("geral")
-  const category = tournament?.categories as Record<string, unknown> | null
+  const category = tournament?.categories
 
   const tabs = [
     { key: "geral" as const, label: "Geral" },
@@ -39,12 +54,12 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
     { key: "B" as const, label: "Grupo B" },
   ]
 
-  const sortStandings = (list: Record<string, unknown>[]) =>
+  const sortStandings = (list: StandingsRow[]) =>
     [...list].sort(
       (a, b) =>
-        ((b.points as number) || 0) - ((a.points as number) || 0) ||
-        ((b.goal_difference as number) || 0) - ((a.goal_difference as number) || 0) ||
-        ((b.goals_for as number) || 0) - ((a.goals_for as number) || 0)
+        ((b.points) || 0) - ((a.points) || 0) ||
+        ((b.goal_difference) || 0) - ((a.goal_difference) || 0) ||
+        ((b.goals_for) || 0) - ((a.goals_for) || 0)
     )
 
   const filteredStandings =
@@ -61,18 +76,18 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
         <div className="flex items-center gap-2">
           {category && (
             <span className="rounded-sm bg-primary px-2 py-0.5 text-xs font-bold uppercase text-primary-foreground">
-              {category.name as string}
+              {category.name}
             </span>
           )}
           <span className="text-sm text-muted-foreground">
-            {tournament?.year as number}/{tournament?.semester as number}
+            {tournament?.year}/{tournament?.semester}
           </span>
         </div>
         <h1 className="mt-1.5 text-2xl font-bold uppercase tracking-tight text-foreground text-balance">
-          {(tournament?.name as string) || "Campeonato"}
+          {tournament?.name || "Campeonato"}
         </h1>
         {tournament?.location && (
-          <p className="mt-1 text-sm text-muted-foreground">{tournament.location as string}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{tournament.location}</p>
         )}
       </header>
 
@@ -120,7 +135,7 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
                 const isDirectQualified = isGroupView && i < 2
                 const isRepescagem = isGroupView && i >= 2
                 return (
-                  <tr key={team.team_id as string} className="border-b border-border/50">
+                  <tr key={team.team_id} className="border-b border-border/50">
                     <td className="py-3.5 text-center">
                       <div className="flex items-center justify-center gap-1">
                         {isGroupView && (
@@ -139,39 +154,39 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
                     <td className="py-3.5 pl-1">
                       <Link href={`/times/${team.team_id}`} className="flex items-center gap-2.5">
                         <TeamBadge
-                          name={team.team_name as string}
-                          shortName={team.short_name as string}
-                          primaryColor={team.primary_color as string}
-                          logoUrl={team.logo_url as string}
+                          name={team.team_name || ""}
+                          shortName={team.short_name}
+                          primaryColor={team.primary_color}
+                          logoUrl={team.logo_url}
                           size="sm"
                         />
                         <span className="truncate text-sm font-semibold text-foreground">
-                          {team.team_name as string}
+                          {team.team_name}
                         </span>
                         {!isGroupView && (
                           <span className="ml-auto shrink-0 pr-1 text-[10px] font-medium text-muted-foreground">
-                            {team.group_name as string}
+                            {team.group_name}
                           </span>
                         )}
                       </Link>
                     </td>
                     <td className="py-3.5 text-center font-mono text-sm font-bold text-foreground">
-                      {(team.points as number) || 0}
+                      {team.points || 0}
                     </td>
                     <td className="py-3.5 text-center font-mono text-sm text-muted-foreground">
-                      {(team.played as number) || 0}
+                      {team.played || 0}
                     </td>
                     <td className="py-3.5 text-center font-mono text-sm text-muted-foreground">
-                      {(team.wins as number) || 0}
+                      {team.wins || 0}
                     </td>
                     <td className="py-3.5 text-center font-mono text-sm text-muted-foreground">
-                      {(team.draws as number) || 0}
+                      {team.draws || 0}
                     </td>
                     <td className="py-3.5 text-center font-mono text-sm text-muted-foreground">
-                      {(team.losses as number) || 0}
+                      {team.losses || 0}
                     </td>
                     <td className="py-3.5 text-center font-mono text-sm text-muted-foreground">
-                      {(team.goal_difference as number) || 0}
+                      {team.goal_difference || 0}
                     </td>
                   </tr>
                 )
@@ -206,10 +221,10 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
           </div>
           <div className="divide-y divide-border/50">
             {nextMatches.map((match) => {
-              const homeTeam = match.home_team as Record<string, unknown>
-              const awayTeam = match.away_team as Record<string, unknown>
-              const round = match.rounds as Record<string, unknown> | null
-              const stages = round?.stages as Record<string, unknown> | null
+              const homeTeam = match.home_team
+              const awayTeam = match.away_team
+              const round = match.rounds
+              const stages = round?.stages
               const roundLabel = stages?.name
                 ? `${stages.name} - Rodada ${round?.round_number}`
                 : round?.round_number
@@ -218,26 +233,26 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
               const isFinished = match.status === "finished"
               return (
                 <Link
-                  key={match.id as string}
+                  key={match.id}
                   href={`/jogos/${match.id}`}
                   className="block px-5 py-4 transition-colors hover:bg-muted/30"
                 >
                   {/* Round label */}
                   <p className="mb-3 text-center text-xs text-muted-foreground">
                     {roundLabel}
-                    {match.match_date && ` - ${formatDate(match.match_date as string)}`}
+                    {match.match_date && ` - ${formatDate(match.match_date)}`}
                   </p>
                   {/* Match row: SHORT + Logo | Score/Time | Logo + SHORT */}
                   <div className="flex items-center">
                     <div className="flex flex-1 items-center justify-end gap-3">
                       <span className="text-base font-bold text-foreground">
-                        {homeTeam?.short_name as string}
+                        {homeTeam?.short_name}
                       </span>
                       <TeamBadge
-                        name={homeTeam?.name as string}
-                        shortName={homeTeam?.short_name as string}
-                        primaryColor={homeTeam?.primary_color as string}
-                        logoUrl={homeTeam?.logo_url as string}
+                        name={homeTeam?.name || ""}
+                        shortName={homeTeam?.short_name}
+                        primaryColor={homeTeam?.primary_color}
+                        logoUrl={homeTeam?.logo_url}
                         size="lg"
                       />
                     </div>
@@ -245,29 +260,29 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
                       {isFinished ? (
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-3xl font-bold text-foreground">
-                            {match.home_score as number}
+                            {match.home_score}
                           </span>
                           <span className="text-lg text-muted-foreground">x</span>
                           <span className="font-mono text-3xl font-bold text-foreground">
-                            {match.away_score as number}
+                            {match.away_score}
                           </span>
                         </div>
                       ) : (
                         <span className="font-mono text-2xl font-bold text-foreground">
-                          {match.match_time ? formatTime(match.match_time as string) : "x"}
+                          {match.match_time ? formatTime(match.match_time) : "x"}
                         </span>
                       )}
                     </div>
                     <div className="flex flex-1 items-center gap-3">
                       <TeamBadge
-                        name={awayTeam?.name as string}
-                        shortName={awayTeam?.short_name as string}
-                        primaryColor={awayTeam?.primary_color as string}
-                        logoUrl={awayTeam?.logo_url as string}
+                        name={awayTeam?.name || ""}
+                        shortName={awayTeam?.short_name}
+                        primaryColor={awayTeam?.primary_color}
+                        logoUrl={awayTeam?.logo_url}
                         size="lg"
                       />
                       <span className="text-base font-bold text-foreground">
-                        {awayTeam?.short_name as string}
+                        {awayTeam?.short_name}
                       </span>
                     </div>
                   </div>

@@ -5,7 +5,6 @@ DELETE FROM rounds;
 DELETE FROM stages;
 DELETE FROM players;
 DELETE FROM teams;
-DELETE FROM sponsors;
 DELETE FROM tournaments;
 DELETE FROM categories;
 
@@ -17,46 +16,20 @@ INSERT INTO categories (id, name, slug, min_age) VALUES
 INSERT INTO tournaments (id, category_id, name, slug, year, semester, status, start_date, end_date, location) VALUES
   ('b1000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000001', 'Interno Hipica 2026/1', 'interno-hipica-2026-1', 2026, 1, 'active', '2026-03-15', '2026-06-20', 'Hipica / Hospital Santa Tereza');
 
--- Sponsors (= teams in this championship)
-INSERT INTO sponsors (id, name, logo_url) VALUES
-  ('s1000000-0000-0000-0000-000000000001', 'Bait', '/logos/bait.png'),
-  ('s1000000-0000-0000-0000-000000000002', 'Cassia Adala', '/logos/cassia-adala.png'),
-  ('s1000000-0000-0000-0000-000000000003', 'Cepromm', '/logos/cepromm.png'),
-  ('s1000000-0000-0000-0000-000000000004', 'Elofort', '/logos/elofort.png'),
-  ('s1000000-0000-0000-0000-000000000005', 'Galleria Bank', '/logos/galleria-bank.png'),
-  ('s1000000-0000-0000-0000-000000000006', 'Mana Poke', '/logos/mana-poke.png'),
-  ('s1000000-0000-0000-0000-000000000007', 'M&M Contabil', '/logos/mm-contabil.png'),
-  ('s1000000-0000-0000-0000-000000000008', 'Patagonia Capital', '/logos/patagonia-capital.png'),
-  ('s1000000-0000-0000-0000-000000000009', 'Rak Logistics', '/logos/rak-logistics.png'),
-  ('s1000000-0000-0000-0000-000000000010', 'Rede Castelo', '/logos/rede-castelo.png'),
-  ('s1000000-0000-0000-0000-000000000011', 'Silveira Contabilidade', '/logos/silveira-contabilidade.png'),
-  ('s1000000-0000-0000-0000-000000000012', 'WIT', '/logos/wit.png');
-
--- Teams: Group A (based on PDF matchups analysis)
--- From the PDF matches, analyzing home/away pairings per round to determine groups:
--- Rd1: PAT x M&M, BAIT x REDE, GAL x MANA, ELO x SILV, RAK x CASSIA, WIT x CEP
--- Rd2: CEP x ELO, CASSIA x GAL, REDE x WIT, M&M x RAK, SILV x BAIT, MANA x PAT
--- Rd3: MANA x M&M, SILV x REDE, PAT x CASSIA, BAIT x CEP, GAL x RAK, ELO x WIT
--- Rd4: WIT x BAIT, RAK x PAT, CEP x SILV, CASSIA x MANA, ELO x REDE, GAL x M&M
--- Rd5: MANA x RAK, SILV x WIT, PAT x GAL, BAIT x ELO, M&M x CASSIA, REDE x CEP
--- Each team plays every other team once (11 opponents over 5 rounds with 6 matches each = each plays 5)
--- This is a single-group round-robin but the PDF doesn't show explicit groups
--- However from the knockout structure (3rd GA x 6th GA, etc.) there ARE groups
--- Let me assign groups based on the round-robin structure: all 12 play each other -> 2 groups of 6
-
-INSERT INTO teams (id, tournament_id, sponsor_id, name, short_name, group_name, logo_url, primary_color) VALUES
-  ('t1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001', 's1000000-0000-0000-0000-000000000008', 'Patagonia Capital', 'PAT', 'A', '/logos/patagonia-capital.png', '#2c2c2c'),
-  ('t1000000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-000000000001', 's1000000-0000-0000-0000-000000000001', 'Bait', 'BAI', 'A', '/logos/bait.png', '#1a1a1a'),
-  ('t1000000-0000-0000-0000-000000000003', 'b1000000-0000-0000-0000-000000000001', 's1000000-0000-0000-0000-000000000005', 'Galleria Bank', 'GAL', 'A', '/logos/galleria-bank.png', '#4caf50'),
-  ('t1000000-0000-0000-0000-000000000004', 'b1000000-0000-0000-0000-000000000001', 's1000000-0000-0000-0000-000000000004', 'Elofort', 'ELO', 'A', '/logos/elofort.png', '#1a3a4a'),
-  ('t1000000-0000-0000-0000-000000000005', 'b1000000-0000-0000-0000-000000000001', 's1000000-0000-0000-0000-000000000011', 'Silveira Contabilidade', 'SIL', 'A', '/logos/silveira-contabilidade.png', '#1a237e'),
-  ('t1000000-0000-0000-0000-000000000006', 'b1000000-0000-0000-0000-000000000001', 's1000000-0000-0000-0000-000000000006', 'Mana Poke', 'MAN', 'A', '/logos/mana-poke.png', '#d32f2f'),
-  ('t1000000-0000-0000-0000-000000000007', 'b1000000-0000-0000-0000-000000000001', 's1000000-0000-0000-0000-000000000007', 'M&M Contabil', 'M&M', 'B', '/logos/mm-contabil.png', '#c62828'),
-  ('t1000000-0000-0000-0000-000000000008', 'b1000000-0000-0000-0000-000000000001', 's1000000-0000-0000-0000-000000000010', 'Rede Castelo', 'RED', 'B', '/logos/rede-castelo.png', '#1565c0'),
-  ('t1000000-0000-0000-0000-000000000009', 'b1000000-0000-0000-0000-000000000001', 's1000000-0000-0000-0000-000000000012', 'WIT', 'WIT', 'B', '/logos/wit.png', '#212121'),
-  ('t1000000-0000-0000-0000-000000000010', 'b1000000-0000-0000-0000-000000000001', 's1000000-0000-0000-0000-000000000009', 'Rak Logistics', 'RAK', 'B', '/logos/rak-logistics.png', '#0d47a1'),
-  ('t1000000-0000-0000-0000-000000000011', 'b1000000-0000-0000-0000-000000000001', 's1000000-0000-0000-0000-000000000002', 'Cassia Adala', 'CAS', 'B', '/logos/cassia-adala.png', '#37474f'),
-  ('t1000000-0000-0000-0000-000000000012', 'b1000000-0000-0000-0000-000000000001', 's1000000-0000-0000-0000-000000000003', 'Cepromm', 'CEP', 'B', '/logos/cepromm.png', '#7b1fa2');
+-- Teams (name = sponsor name, logo = sponsor logo)
+INSERT INTO teams (id, tournament_id, name, short_name, group_name, logo_url, primary_color) VALUES
+  ('t1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001', 'Patagonia Capital', 'PAT', 'A', '/logos/patagonia-capital.png', '#2c2c2c'),
+  ('t1000000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-000000000001', 'Bait', 'BAI', 'A', '/logos/bait.png', '#1a1a1a'),
+  ('t1000000-0000-0000-0000-000000000003', 'b1000000-0000-0000-0000-000000000001', 'Galleria Bank', 'GAL', 'A', '/logos/galleria-bank.png', '#4caf50'),
+  ('t1000000-0000-0000-0000-000000000004', 'b1000000-0000-0000-0000-000000000001', 'Elofort', 'ELO', 'A', '/logos/elofort.png', '#1a3a4a'),
+  ('t1000000-0000-0000-0000-000000000005', 'b1000000-0000-0000-0000-000000000001', 'Silveira Contabilidade', 'SIL', 'A', '/logos/silveira-contabilidade.png', '#1a237e'),
+  ('t1000000-0000-0000-0000-000000000006', 'b1000000-0000-0000-0000-000000000001', 'Mana Poke', 'MAN', 'A', '/logos/mana-poke.png', '#d32f2f'),
+  ('t1000000-0000-0000-0000-000000000007', 'b1000000-0000-0000-0000-000000000001', 'M&M Contabil', 'M&M', 'B', '/logos/mm-contabil.png', '#c62828'),
+  ('t1000000-0000-0000-0000-000000000008', 'b1000000-0000-0000-0000-000000000001', 'Rede Castelo', 'RED', 'B', '/logos/rede-castelo.png', '#1565c0'),
+  ('t1000000-0000-0000-0000-000000000009', 'b1000000-0000-0000-0000-000000000001', 'WIT', 'WIT', 'B', '/logos/wit.png', '#212121'),
+  ('t1000000-0000-0000-0000-000000000010', 'b1000000-0000-0000-0000-000000000001', 'Rak Logistics', 'RAK', 'B', '/logos/rak-logistics.png', '#0d47a1'),
+  ('t1000000-0000-0000-0000-000000000011', 'b1000000-0000-0000-0000-000000000001', 'Cassia Adala', 'CAS', 'B', '/logos/cassia-adala.png', '#37474f'),
+  ('t1000000-0000-0000-0000-000000000012', 'b1000000-0000-0000-0000-000000000001', 'Cepromm', 'CEP', 'B', '/logos/cepromm.png', '#7b1fa2');
 
 -- Stages
 INSERT INTO stages (id, tournament_id, name, slug, order_num, type) VALUES
@@ -78,7 +51,7 @@ INSERT INTO rounds (id, stage_id, tournament_id, round_number, date, name) VALUE
   ('r1000000-0000-0000-0000-000000000008', 'g1000000-0000-0000-0000-000000000004', 'b1000000-0000-0000-0000-000000000001', 8, '2026-05-31', 'Semifinal'),
   ('r1000000-0000-0000-0000-000000000009', 'g1000000-0000-0000-0000-000000000005', 'b1000000-0000-0000-0000-000000000001', 9, '2026-06-13', 'Final');
 
--- Group Stage Matches (from PDF)
+-- Group Stage Matches
 -- Round 1 - 15/mar
 INSERT INTO matches (id, round_id, tournament_id, home_team_id, away_team_id, field_number, match_time, match_date, status, stage_id) VALUES
   ('m1000000-0000-0000-0000-000000000001', 'r1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001', 't1000000-0000-0000-0000-000000000001', 't1000000-0000-0000-0000-000000000007', 1, '07:20', '2026-03-15', 'scheduled', 'g1000000-0000-0000-0000-000000000001'),

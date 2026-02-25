@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils"
+import { Shield } from "lucide-react"
 
 interface TeamBadgeProps {
   name: string
@@ -9,21 +10,23 @@ interface TeamBadgeProps {
   className?: string
 }
 
-export function TeamBadge({ name, shortName, primaryColor, logoUrl, size = "md", className }: TeamBadgeProps) {
-  const sizeClasses = {
-    xs: "h-5 w-5 text-[8px]",
-    sm: "h-8 w-8 text-[10px]",
-    md: "h-10 w-10 text-xs",
-    lg: "h-14 w-14 text-sm",
-    xl: "h-16 w-16 text-base",
-  }
+const sizeMap = {
+  xs: { container: "h-5 w-5", icon: "h-3 w-3" },
+  sm: { container: "h-8 w-8", icon: "h-4 w-4" },
+  md: { container: "h-10 w-10", icon: "h-5 w-5" },
+  lg: { container: "h-14 w-14", icon: "h-7 w-7" },
+  xl: { container: "h-16 w-16", icon: "h-8 w-8" },
+}
+
+export function TeamBadge({ name, logoUrl, size = "md", className }: TeamBadgeProps) {
+  const s = sizeMap[size]
 
   if (logoUrl) {
     return (
       <img
         src={logoUrl}
         alt={name}
-        className={cn("shrink-0 object-contain", sizeClasses[size], className)}
+        className={cn("shrink-0 object-contain", s.container, className)}
       />
     )
   }
@@ -31,13 +34,12 @@ export function TeamBadge({ name, shortName, primaryColor, logoUrl, size = "md",
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full font-bold text-white",
-        sizeClasses[size],
+        "flex shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground",
+        s.container,
         className
       )}
-      style={{ backgroundColor: primaryColor || "#333" }}
     >
-      {(shortName || name).slice(0, 3).toUpperCase()}
+      <Shield className={s.icon} />
     </div>
   )
 }
