@@ -59,7 +59,7 @@ export default async function HomePage() {
       for (const e of events) {
         if (!e.player_id || !e.team_id) continue
         const existing = goalCounts.get(e.player_id)
-        if (existing) existing.goals++
+        if (existing) existing.goals += 1
         else goalCounts.set(e.player_id, { playerId: e.player_id, teamId: e.team_id, goals: 1 })
       }
 

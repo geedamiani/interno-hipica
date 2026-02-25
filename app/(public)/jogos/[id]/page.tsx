@@ -23,7 +23,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     .from("match_events")
     .select("*, players(name, nickname)")
     .eq("match_id", id)
-    .order("minute", { ascending: true })
+    .order("created_at", { ascending: true })
 
   return (
     <MatchDetailContent

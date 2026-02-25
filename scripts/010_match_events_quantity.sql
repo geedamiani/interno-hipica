@@ -1,0 +1,2 @@
+-- Optional: add quantity to match_events (legacy; app now uses 1 event = 1 goal/assist).
+-- ALTER TABLE match_events ADD COLUMN IF NOT EXISTS quantity INT DEFAULT 1;

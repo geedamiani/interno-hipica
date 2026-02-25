@@ -41,6 +41,7 @@ export type Database = {
           team_id: string | null
           event_type: string
           minute: number | null
+          quantity: number | null
           notes: string | null
           created_at: string | null
         }
@@ -51,6 +52,7 @@ export type Database = {
           team_id?: string | null
           event_type: string
           minute?: number | null
+          quantity?: number | null
           notes?: string | null
           created_at?: string | null
         }
@@ -61,6 +63,7 @@ export type Database = {
           team_id?: string | null
           event_type?: string
           minute?: number | null
+          quantity?: number | null
           notes?: string | null
           created_at?: string | null
         }

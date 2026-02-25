@@ -173,11 +173,6 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
                       {eventLabels[type] || type}
                     </span>
                   </div>
-                  {event.minute != null && (
-                    <span className="font-mono text-[10px] text-muted-foreground">
-                      {event.minute}{"'"}
-                    </span>
-                  )}
                 </div>
               )
             })}

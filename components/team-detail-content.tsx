@@ -37,8 +37,8 @@ export function TeamDetailContent({ team, players, standings, matches, playerEve
     const pid = e.player_id
     if (!pid) return
     const stats = playerStats.get(pid) || { goals: 0, assists: 0, yellowCards: 0, redCards: 0 }
-    if (e.event_type === "goal" || e.event_type === "penalty_goal") stats.goals++
-    if (e.event_type === "assist") stats.assists++
+    if (e.event_type === "goal" || e.event_type === "penalty_goal") stats.goals += 1
+    if (e.event_type === "assist") stats.assists += 1
     if (e.event_type === "yellow_card") stats.yellowCards++
     if (e.event_type === "red_card") stats.redCards++
     playerStats.set(pid, stats)

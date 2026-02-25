@@ -34,7 +34,7 @@ export default async function AdminMatchEditPage({ params }: { params: Promise<{
       .from("match_events")
       .select("*, players(name, nickname)")
       .eq("match_id", id)
-      .order("minute", { ascending: true }),
+      .order("created_at", { ascending: true }),
   ])
 
   // Flatten roster into player-like objects for the editor

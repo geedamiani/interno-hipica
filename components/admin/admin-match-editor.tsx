@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
 import { TeamBadge } from "@/components/team-badge"
 import { ArrowLeft, Plus, Trash2, Save } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
@@ -27,14 +26,14 @@ interface AdminMatchEditorProps {
   events: Tables<"match_events">[]
 }
 
+const NO_PLAYER = "__none__"
+
 const eventTypes = [
   { value: "goal", label: "Gol" },
-  { value: "penalty_goal", label: "Gol de Penalti" },
   { value: "own_goal", label: "Gol Contra" },
   { value: "assist", label: "Assistencia" },
   { value: "yellow_card", label: "Cartao Amarelo" },
   { value: "red_card", label: "Cartao Vermelho" },
-  { value: "penalty_miss", label: "Penalti Perdido" },
 ]
 
 interface MatchEvent {
@@ -42,7 +41,6 @@ interface MatchEvent {
   event_type: string
   player_id: string
   team_id: string
-  minute: number | null
   isNew?: boolean
 }
 
@@ -62,9 +60,8 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
     initialEvents.map((e) => ({
       id: e.id,
       event_type: e.event_type,
-      player_id: e.player_id || "",
+      player_id: e.player_id || NO_PLAYER,
       team_id: e.team_id || "",
-      minute: e.minute,
     }))
   )
   const [deletedEventIds, setDeletedEventIds] = useState<string[]>([])
@@ -74,9 +71,8 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
       ...prev,
       {
         event_type: "goal",
-        player_id: "",
+        player_id: NO_PLAYER,
         team_id: teamId,
-        minute: null,
         isNew: true,
       },
     ])
@@ -120,21 +116,20 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
       }
 
       for (const event of matchEvents) {
-        if (!event.player_id) continue
+        const playerId = event.player_id === NO_PLAYER ? "" : event.player_id
+        if (!playerId) continue
         if (event.id && !event.isNew) {
           await supabase.from("match_events").update({
             event_type: event.event_type,
-            player_id: event.player_id,
+            player_id: playerId,
             team_id: event.team_id,
-            minute: event.minute,
           }).eq("id", event.id)
         } else {
           await supabase.from("match_events").insert({
             match_id: match.id,
             event_type: event.event_type,
-            player_id: event.player_id,
+            player_id: playerId,
             team_id: event.team_id,
-            minute: event.minute,
           })
         }
       }
@@ -182,6 +177,8 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
               <Input
                 type="number"
                 min={0}
+                autoComplete="off"
+                aria-label="Placar casa"
                 className="w-16 text-center font-mono text-2xl font-bold"
                 value={homeScore}
                 onChange={(e) => setHomeScore(parseInt(e.target.value) || 0)}
@@ -202,6 +199,8 @@ export function AdminMatchEditor({ match, homePlayers, awayPlayers, events: init
               <Input
                 type="number"
                 min={0}
+                autoComplete="off"
+                aria-label="Placar visitante"
                 className="w-16 text-center font-mono text-2xl font-bold"
                 value={awayScore}
                 onChange={(e) => setAwayScore(parseInt(e.target.value) || 0)}
@@ -338,8 +337,9 @@ function EventRow({
   onUpdate: (index: number, field: keyof MatchEvent, value: string | number | null) => void
   onRemove: (index: number) => void
 }) {
+  // Event row: type + player + delete only. No minute, quantity, or other number input.
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-border p-2">
+    <div data-event-row className="flex items-center gap-2 rounded-lg border border-border p-2">
       <Select
         value={event.event_type}
         onValueChange={(val) => onUpdate(index, "event_type", val)}
@@ -355,13 +355,16 @@ function EventRow({
       </Select>
 
       <Select
-        value={event.player_id || ""}
+        value={event.player_id || NO_PLAYER}
         onValueChange={(val) => onUpdate(index, "player_id", val)}
       >
         <SelectTrigger className="h-8 flex-1 text-xs">
           <SelectValue placeholder="Jogador" />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value={NO_PLAYER} disabled>
+            Jogador
+          </SelectItem>
           {players.map((p) => (
             <SelectItem key={p.id} value={p.id}>
               {p.shirt_number != null ? `#${p.shirt_number} ` : ""}
@@ -370,16 +373,6 @@ function EventRow({
           ))}
         </SelectContent>
       </Select>
-
-      <Input
-        type="number"
-        min={0}
-        max={120}
-        placeholder={"Min"}
-        className="h-8 w-14 text-center text-xs"
-        value={event.minute ?? ""}
-        onChange={(e) => onUpdate(index, "minute", e.target.value ? parseInt(e.target.value) : null)}
-      />
 
       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onRemove(index)}>
         <Trash2 className="h-3.5 w-3.5" />

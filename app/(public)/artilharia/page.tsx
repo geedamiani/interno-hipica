@@ -16,15 +16,15 @@ export default async function ArtilhariaPage() {
       return <TopScorersContent topGoals={[]} topAssists={[]} />
     }
 
-    // Aggregate by player
+    // One event row = 1 goal or 1 assist
     const playerMap = new Map<string, { playerId: string; teamId: string; goals: number; assists: number }>()
     for (const e of events) {
       if (!e.player_id || !e.team_id) continue
       const existing = playerMap.get(e.player_id)
       const isAssist = e.event_type === "assist"
       if (existing) {
-        if (isAssist) existing.assists++
-        else existing.goals++
+        if (isAssist) existing.assists += 1
+        else existing.goals += 1
       } else {
         playerMap.set(e.player_id, {
           playerId: e.player_id,
