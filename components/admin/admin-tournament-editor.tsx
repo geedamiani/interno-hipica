@@ -212,6 +212,7 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
   async function handleAddMatch() {
     if (!newMatch.home_team_id || !newMatch.away_team_id) { toast.error("Selecione os dois times"); return }
     if (newMatch.home_team_id === newMatch.away_team_id) { toast.error("Times devem ser diferentes"); return }
+    const round = newMatch.round_id ? rounds.find((r) => r.id === newMatch.round_id) : null
     const { error } = await supabase.from("matches").insert({
       tournament_id: tournament.id,
       home_team_id: newMatch.home_team_id,
@@ -220,6 +221,7 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
       match_time: newMatch.match_time || null,
       field_number: newMatch.field_number ? parseInt(newMatch.field_number) : null,
       round_id: newMatch.round_id || null,
+      stage_id: round?.stage_id || null,
       status: "scheduled",
     })
     if (error) { toast.error("Erro: " + error.message); return }
