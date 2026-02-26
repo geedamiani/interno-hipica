@@ -52,7 +52,6 @@ export function TeamsContent({ teams }: TeamsContentProps) {
                   />
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-foreground">{team.name}</p>
-                    <p className="text-[10px] text-muted-foreground">Grupo {team.group_name}</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </Link>

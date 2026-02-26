@@ -120,7 +120,7 @@ export function AdminTournamentForm({ categories, tournament }: Props) {
       <div className="flex flex-col gap-4 rounded-xl bg-card p-4">
         <div>
           <Label className="text-xs">Nome *</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Interno Hipica 2026/1" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Interno Hípica 2026/1" />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -133,8 +133,8 @@ export function AdminTournamentForm({ categories, tournament }: Props) {
             <Select value={semester} onValueChange={setSemester}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">1o Semestre</SelectItem>
-                <SelectItem value="2">2o Semestre</SelectItem>
+                <SelectItem value="1">1º Semestre</SelectItem>
+                <SelectItem value="2">2º Semestre</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -178,7 +178,7 @@ export function AdminTournamentForm({ categories, tournament }: Props) {
 
         <div>
           <Label className="text-xs">Local</Label>
-          <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ex: Hipica / Hospital Santa Tereza" />
+          <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ex: Hípica / Hospital Santa Tereza" />
         </div>
 
         <Button onClick={handleSave} disabled={isPending} className="mt-2">

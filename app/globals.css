@@ -119,7 +119,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   --font-sans: 'Google Sans', 'Google Sans Text', system-ui, -apple-system, sans-serif;
-  --font-mono: ui-monospace, monospace;
+  --font-mono: var(--font-sans);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

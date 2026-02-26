@@ -65,7 +65,7 @@ export function StandingsContent({ standings }: StandingsContentProps) {
           <thead>
             <tr className="border-b border-border text-muted-foreground">
               <th className="w-7 py-2.5 text-center text-[10px] font-semibold uppercase"></th>
-              <th className="py-2.5 text-left text-[10px] font-semibold uppercase pl-1">Classificacao</th>
+              <th className="py-2.5 text-left text-[10px] font-semibold uppercase pl-1">Classificação</th>
               <th className="w-8 py-2.5 text-center text-[10px] font-bold uppercase">P</th>
               <th className="w-7 py-2.5 text-center text-[10px] font-semibold uppercase">J</th>
               <th className="w-7 py-2.5 text-center text-[10px] font-semibold uppercase">V</th>

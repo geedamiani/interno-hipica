@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ArrowLeft, MapPin, Clock } from "lucide-react"
 import { TeamBadge } from "@/components/team-badge"
 import { cn } from "@/lib/utils"
@@ -32,15 +33,16 @@ function formatTime(timeStr: string) {
 
 const eventLabels: Record<string, string> = {
   goal: "Gol",
-  penalty_goal: "Gol (Penalti)",
+  penalty_goal: "Gol (Pênalti)",
   own_goal: "Gol Contra",
-  yellow_card: "Cartao Amarelo",
-  red_card: "Cartao Vermelho",
-  assist: "Assistencia",
-  penalty_miss: "Penalti Perdido",
+  yellow_card: "Cartão Amarelo",
+  red_card: "Cartão Vermelho",
+  assist: "Assistência",
+  penalty_miss: "Pênalti Perdido",
 }
 
 export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
+  const router = useRouter()
   const homeTeam = match.home_team
   const awayTeam = match.away_team
   const round = match.rounds
@@ -55,10 +57,14 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
       {/* Back nav */}
       <header className="border-b border-border bg-card px-4 pb-3 pt-12">
         <div className="flex items-center gap-2">
-          <Link href="/jogos" className="flex items-center gap-1 text-xs font-medium text-primary">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex items-center gap-1 text-xs font-medium text-primary"
+          >
             <ArrowLeft className="h-4 w-4" />
-            Jogos
-          </Link>
+            Voltar
+          </button>
           <span className="text-xs text-muted-foreground">
             {stages?.name ? `${stages.name} - ` : ""}Rodada {round?.round_number}
           </span>
@@ -189,8 +195,8 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
           <div className="divide-y divide-border/50 px-4 pb-4">
             {[
               { label: "Gols", home: homeEvents.filter(e => ["goal", "penalty_goal"].includes(e.event_type)).length, away: awayEvents.filter(e => ["goal", "penalty_goal"].includes(e.event_type)).length },
-              { label: "Cartoes Amarelos", home: homeEvents.filter(e => e.event_type === "yellow_card").length, away: awayEvents.filter(e => e.event_type === "yellow_card").length },
-              { label: "Cartoes Vermelhos", home: homeEvents.filter(e => e.event_type === "red_card").length, away: awayEvents.filter(e => e.event_type === "red_card").length },
+              { label: "Cartões Amarelos", home: homeEvents.filter(e => e.event_type === "yellow_card").length, away: awayEvents.filter(e => e.event_type === "yellow_card").length },
+              { label: "Cartões Vermelhos", home: homeEvents.filter(e => e.event_type === "red_card").length, away: awayEvents.filter(e => e.event_type === "red_card").length },
             ].map((stat) => (
               <div key={stat.label} className="flex items-center py-2 text-xs">
                 <span className="w-8 text-center font-mono font-bold text-foreground">{stat.home}</span>
@@ -204,7 +210,7 @@ export function MatchDetailContent({ match, events }: MatchDetailContentProps) {
 
       {events.length === 0 && !isFinished && (
         <div className="py-12 text-center text-sm text-muted-foreground">
-          Jogo ainda nao realizado.
+          Jogo ainda não realizado.
         </div>
       )}
     </main>

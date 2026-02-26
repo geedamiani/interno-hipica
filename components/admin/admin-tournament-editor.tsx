@@ -306,8 +306,8 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
               <Select value={semester} onValueChange={setSemester}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">1o Semestre</SelectItem>
-                  <SelectItem value="2">2o Semestre</SelectItem>
+                  <SelectItem value="1">1º Semestre</SelectItem>
+                  <SelectItem value="2">2º Semestre</SelectItem>
                 </SelectContent>
               </Select>
             </div>

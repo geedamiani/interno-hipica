@@ -20,15 +20,15 @@ export default async function HomePage() {
         <HomeContent
           tournament={null}
           standings={[]}
-          nextMatches={[]}
           topScorers={[]}
+          assists={[]}
         />
       )
     }
 
     const tournamentId = tournament.id
 
-    const [{ data: standings }, { data: nextMatches }, { data: events }] = await Promise.all([
+    const [{ data: standings }, { data: events }] = await Promise.all([
       supabase
         .from("standings")
         .select("*")
@@ -36,67 +36,96 @@ export default async function HomePage() {
         .order("points", { ascending: false })
         .order("goal_difference", { ascending: false }),
       supabase
-        .from("matches")
-        .select(
-          "id, match_date, match_time, home_score, away_score, status, field_number, home_team:teams!matches_home_team_id_fkey(id, name, short_name, primary_color, logo_url), away_team:teams!matches_away_team_id_fkey(id, name, short_name, primary_color, logo_url), rounds(round_number, stages(name))"
-        )
-        .eq("tournament_id", tournamentId)
-        .in("status", ["scheduled", "in_progress"])
-        .order("match_date", { ascending: true })
-        .order("match_time", { ascending: true })
-        .limit(4),
-      supabase
         .from("match_events")
-        .select("player_id, team_id")
-        .eq("event_type", "goal"),
+        .select("player_id, team_id, event_type")
+        .in("event_type", ["goal", "assist"]),
     ])
 
     // Build top scorers
     let topScorersList: HomeContentProps["topScorers"] = []
+    let topAssistsList: HomeContentProps["assists"] = []
 
     if (events && events.length > 0) {
       const goalCounts = new Map<string, { playerId: string; teamId: string; goals: number }>()
+      const assistCounts = new Map<string, { playerId: string; teamId: string; assists: number }>()
+
       for (const e of events) {
-        if (!e.player_id || !e.team_id) continue
-        const existing = goalCounts.get(e.player_id)
-        if (existing) existing.goals += 1
-        else goalCounts.set(e.player_id, { playerId: e.player_id, teamId: e.team_id, goals: 1 })
+        if (!e.player_id || !e.team_id || !e.event_type) continue
+        if (e.event_type === "goal") {
+          const existing = goalCounts.get(e.player_id)
+          if (existing) existing.goals += 1
+          else goalCounts.set(e.player_id, { playerId: e.player_id, teamId: e.team_id, goals: 1 })
+        } else if (e.event_type === "assist") {
+          const existing = assistCounts.get(e.player_id)
+          if (existing) existing.assists += 1
+          else assistCounts.set(e.player_id, { playerId: e.player_id, teamId: e.team_id, assists: 1 })
+        }
       }
 
-      const topPlayers = Array.from(goalCounts.values())
+      const topScorerPlayers = Array.from(goalCounts.values())
         .sort((a, b) => b.goals - a.goals)
         .slice(0, 5)
-      const playerIds = topPlayers.map((p) => p.playerId)
-      const teamIds = [...new Set(topPlayers.map((p) => p.teamId))]
 
-      const [playersRes, teamsRes] = await Promise.all([
-        supabase.from("players").select("id, name, nickname").in("id", playerIds),
-        supabase.from("teams").select("id, short_name, primary_color, logo_url").in("id", teamIds),
-      ])
+      const topAssistPlayers = Array.from(assistCounts.values())
+        .sort((a, b) => b.assists - a.assists)
+        .slice(0, 5)
 
-      const pMap = new Map((playersRes.data || []).map((p) => [p.id, p]))
-      const tMap = new Map((teamsRes.data || []).map((t) => [t.id, t]))
+      const playerIds = [
+        ...new Set([
+          ...topScorerPlayers.map((p) => p.playerId),
+          ...topAssistPlayers.map((p) => p.playerId),
+        ]),
+      ]
+      const teamIds = [
+        ...new Set([
+          ...topScorerPlayers.map((p) => p.teamId),
+          ...topAssistPlayers.map((p) => p.teamId),
+        ]),
+      ]
 
-      topScorersList = topPlayers.map((tp) => {
-        const p = pMap.get(tp.playerId)
-        const t = tMap.get(tp.teamId)
-        return {
-          name: p?.name || "Desconhecido",
-          nickname: p?.nickname || null,
-          teamShort: t?.short_name || null,
-          teamColor: t?.primary_color || null,
-          teamLogoUrl: t?.logo_url || null,
-          goals: tp.goals,
-        }
-      })
+      if (playerIds.length > 0 && teamIds.length > 0) {
+        const [playersRes, teamsRes] = await Promise.all([
+          supabase.from("players").select("id, name, nickname").in("id", playerIds),
+          supabase.from("teams").select("id, short_name, primary_color, logo_url").in("id", teamIds),
+        ])
+
+        const pMap = new Map((playersRes.data || []).map((p) => [p.id, p]))
+        const tMap = new Map((teamsRes.data || []).map((t) => [t.id, t]))
+
+        topScorersList = topScorerPlayers.map((tp) => {
+          const p = pMap.get(tp.playerId)
+          const t = tMap.get(tp.teamId)
+          return {
+            name: p?.name || "Desconhecido",
+            nickname: p?.nickname || null,
+            teamShort: t?.short_name || null,
+            teamColor: t?.primary_color || null,
+            teamLogoUrl: t?.logo_url || null,
+            goals: tp.goals,
+          }
+        })
+
+        topAssistsList = topAssistPlayers.map((tp) => {
+          const p = pMap.get(tp.playerId)
+          const t = tMap.get(tp.teamId)
+          return {
+            name: p?.name || "Desconhecido",
+            nickname: p?.nickname || null,
+            teamShort: t?.short_name || null,
+            teamColor: t?.primary_color || null,
+            teamLogoUrl: t?.logo_url || null,
+            assists: tp.assists,
+          }
+        })
+      }
     }
 
     return (
       <HomeContent
         tournament={tournament}
         standings={(standings || []) as HomeContentProps["standings"]}
-        nextMatches={nextMatches || []}
         topScorers={topScorersList}
+        assists={topAssistsList}
       />
     )
   } catch {
@@ -104,8 +133,8 @@ export default async function HomePage() {
       <HomeContent
         tournament={null}
         standings={[]}
-        nextMatches={[]}
         topScorers={[]}
+        assists={[]}
       />
     )
   }

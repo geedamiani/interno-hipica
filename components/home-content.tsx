@@ -13,18 +13,9 @@ type TournamentWithCategory = Pick<Tables<"tournaments">, "id" | "name" | "statu
 
 type StandingsRow = Tables<"standings">
 
-type TeamSubset = Pick<Tables<"teams">, "id" | "name" | "short_name" | "primary_color" | "logo_url">
-
-type HomeMatch = Pick<Tables<"matches">, "id" | "match_date" | "match_time" | "home_score" | "away_score" | "status" | "field_number"> & {
-  home_team: TeamSubset | null
-  away_team: TeamSubset | null
-  rounds: (Pick<Tables<"rounds">, "round_number"> & { stages: Pick<Tables<"stages">, "name"> | null }) | null
-}
-
 export interface HomeContentProps {
   tournament: TournamentWithCategory | null
   standings: StandingsRow[]
-  nextMatches: HomeMatch[]
   topScorers: {
     name: string
     nickname: string | null
@@ -33,6 +24,14 @@ export interface HomeContentProps {
     teamLogoUrl: string | null
     goals: number
   }[]
+  assists: {
+    name: string
+    nickname: string | null
+    teamShort: string | null
+    teamColor: string | null
+    teamLogoUrl: string | null
+    assists: number
+  }[]
 }
 
 function formatDate(dateStr: string) {
@@ -40,11 +39,7 @@ function formatDate(dateStr: string) {
   return date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })
 }
 
-function formatTime(timeStr: string) {
-  return timeStr.slice(0, 5)
-}
-
-export function HomeContent({ tournament, standings, nextMatches, topScorers }: HomeContentProps) {
+export function HomeContent({ tournament, standings, topScorers, assists }: HomeContentProps) {
   const [activeTab, setActiveTab] = useState<"geral" | "A" | "B">("geral")
   const category = tournament?.categories
 
@@ -61,6 +56,24 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
         ((b.goal_difference) || 0) - ((a.goal_difference) || 0) ||
         ((b.goals_for) || 0) - ((a.goals_for) || 0)
     )
+
+  // Rank within group (1-based) for indicators in Geral and group tabs
+  const rankInGroupByTeamId = (() => {
+    const map = new Map<string, number>()
+    const byGroup = new Map<string, StandingsRow[]>()
+    for (const row of standings) {
+      const g = row.group_name?.trim() ?? ""
+      if (g === "") continue
+      if (!byGroup.has(g)) byGroup.set(g, [])
+      byGroup.get(g)!.push(row)
+    }
+    byGroup.forEach((rows) => {
+      sortStandings(rows).forEach((row, idx) => {
+        map.set(row.team_id, idx + 1)
+      })
+    })
+    return map
+  })()
 
   const filteredStandings =
     activeTab === "geral"
@@ -91,10 +104,10 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
         )}
       </header>
 
-      {/* ===== CLASSIFICACAO ===== */}
+      {/* ===== CLASSIFICAÇÃO ===== */}
       <section className="mt-3 bg-card">
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
-          <h2 className="text-lg font-bold uppercase text-foreground">Classificacao</h2>
+          <h2 className="text-lg font-bold uppercase text-foreground">Classificação</h2>
         </div>
 
         {/* Tabs */}
@@ -132,17 +145,19 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
             </thead>
             <tbody>
               {filteredStandings.map((team, i) => {
-                const isDirectQualified = isGroupView && i < 2
-                const isRepescagem = isGroupView && i >= 2
+                const rankInGroup = rankInGroupByTeamId.get(team.team_id)
+                const isDirectQualified = rankInGroup != null && rankInGroup <= 2
+                const isRepescagem = rankInGroup != null && rankInGroup >= 3
+                const showIndicator = rankInGroup != null
                 return (
                   <tr key={team.team_id} className="border-b border-border/50">
                     <td className="py-3.5 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        {isGroupView && (
+                        {showIndicator && (
                           <div
                             className={cn(
                               "h-5 w-1 rounded-full",
-                              isDirectQualified ? "bg-primary" : isRepescagem ? "bg-secondary" : "bg-transparent"
+                              isDirectQualified ? "bg-primary" : isRepescagem ? "bg-destructive" : "bg-transparent"
                             )}
                           />
                         )}
@@ -158,10 +173,10 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
                           shortName={team.short_name}
                           primaryColor={team.primary_color}
                           logoUrl={team.logo_url}
-                          size="sm"
+                          size="md"
                         />
                         <span className="truncate text-sm font-semibold text-foreground">
-                          {team.team_name}
+                          {team.short_name || team.team_name}
                         </span>
                         {!isGroupView && (
                           <span className="ml-auto shrink-0 pr-1 text-[10px] font-medium text-muted-foreground">
@@ -195,103 +210,20 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
           </table>
         </div>
 
-        {/* Legend */}
-        {isGroupView && (
+        {/* Legend - show when any team has a group (Geral or group tab) */}
+        {standings.some((s) => s.group_name) && (
           <div className="flex items-center gap-5 px-5 py-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
               <div className="h-4 w-1 rounded-full bg-primary" />
               <span>Classificado direto</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="h-4 w-1 rounded-full bg-secondary" />
+              <div className="h-4 w-1 rounded-full bg-destructive" />
               <span>Repescagem</span>
             </div>
           </div>
         )}
       </section>
-
-      {/* ===== PROXIMOS JOGOS - GE Globo style ===== */}
-      {nextMatches.length > 0 && (
-        <section className="mt-3 bg-card">
-          <div className="flex items-center justify-between border-b border-border px-5 py-3">
-            <h2 className="text-lg font-bold uppercase text-foreground">Proximos Jogos</h2>
-            <Link href="/jogos" className="flex items-center gap-1 text-sm font-bold text-primary">
-              Mais jogos <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="divide-y divide-border/50">
-            {nextMatches.map((match) => {
-              const homeTeam = match.home_team
-              const awayTeam = match.away_team
-              const round = match.rounds
-              const stages = round?.stages
-              const roundLabel = stages?.name
-                ? `${stages.name} - Rodada ${round?.round_number}`
-                : round?.round_number
-                  ? `Rodada ${round.round_number}`
-                  : ""
-              const isFinished = match.status === "finished"
-              return (
-                <Link
-                  key={match.id}
-                  href={`/jogos/${match.id}`}
-                  className="block px-5 py-4 transition-colors hover:bg-muted/30"
-                >
-                  {/* Round label */}
-                  <p className="mb-3 text-center text-xs text-muted-foreground">
-                    {roundLabel}
-                    {match.match_date && ` - ${formatDate(match.match_date)}`}
-                  </p>
-                  {/* Match row: SHORT + Logo | Score/Time | Logo + SHORT */}
-                  <div className="flex items-center">
-                    <div className="flex flex-1 items-center justify-end gap-3">
-                      <span className="text-base font-bold text-foreground">
-                        {homeTeam?.short_name}
-                      </span>
-                      <TeamBadge
-                        name={homeTeam?.name || ""}
-                        shortName={homeTeam?.short_name}
-                        primaryColor={homeTeam?.primary_color}
-                        logoUrl={homeTeam?.logo_url}
-                        size="lg"
-                      />
-                    </div>
-                    <div className="mx-4 flex min-w-[72px] flex-col items-center">
-                      {isFinished ? (
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-3xl font-bold text-foreground">
-                            {match.home_score}
-                          </span>
-                          <span className="text-lg text-muted-foreground">x</span>
-                          <span className="font-mono text-3xl font-bold text-foreground">
-                            {match.away_score}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="font-mono text-2xl font-bold text-foreground">
-                          {match.match_time ? formatTime(match.match_time) : "x"}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-1 items-center gap-3">
-                      <TeamBadge
-                        name={awayTeam?.name || ""}
-                        shortName={awayTeam?.short_name}
-                        primaryColor={awayTeam?.primary_color}
-                        logoUrl={awayTeam?.logo_url}
-                        size="lg"
-                      />
-                      <span className="text-base font-bold text-foreground">
-                        {awayTeam?.short_name}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </section>
-      )}
 
       {/* ===== ARTILHARIA - GE Globo style ===== */}
       {topScorers.length > 0 && (
@@ -328,6 +260,44 @@ export function HomeContent({ tournament, standings, nextMatches, topScorers }: 
                   <p className="text-xs text-muted-foreground">{scorer.teamShort}</p>
                 </div>
                 <span className="font-mono text-2xl font-bold text-foreground">{scorer.goals}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ===== ASSISTÊNCIAS ===== */}
+      {assists.length > 0 && (
+        <section className="mt-3 bg-card">
+          <div className="flex items-center justify-between border-b border-border px-5 py-3">
+            <h2 className="text-lg font-bold uppercase text-foreground">Assistências</h2>
+          </div>
+          <div className="border-b border-border px-5 py-2">
+            <div className="flex items-center justify-between text-xs font-semibold uppercase text-muted-foreground">
+              <span>Ranking</span>
+              <span>Assistências</span>
+            </div>
+          </div>
+          <div className="divide-y divide-border/50">
+            {assists.map((player, i) => (
+              <div key={player.name + i} className="flex items-center gap-4 px-5 py-4">
+                <span className="w-6 text-center font-mono text-lg font-bold text-muted-foreground">
+                  {i + 1}
+                </span>
+                <TeamBadge
+                  name={player.teamShort || ""}
+                  shortName={player.teamShort}
+                  primaryColor={player.teamColor}
+                  logoUrl={player.teamLogoUrl}
+                  size="sm"
+                />
+                <div className="flex-1">
+                  <p className="text-base font-semibold text-foreground">
+                    {player.nickname || player.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{player.teamShort}</p>
+                </div>
+                <span className="font-mono text-2xl font-bold text-foreground">{player.assists}</span>
               </div>
             ))}
           </div>

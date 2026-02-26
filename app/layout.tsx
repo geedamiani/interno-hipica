@@ -4,8 +4,8 @@ import { Toaster } from 'sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Interno Hipica - Campeonato Veterano',
-  description: 'Acompanhe resultados, classificacao, artilharia e estatisticas do Campeonato Veterano do Interno Hipica.',
+  title: 'Interno Hípica - Campeonato Veterano',
+  description: 'Acompanhe resultados, classificação, artilharia e estatísticas do Campeonato Veterano do Interno Hípica.',
   generator: 'v0.app',
 }
 

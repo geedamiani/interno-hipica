@@ -32,7 +32,7 @@ export function TopScorersContent({ topGoals, topAssists }: TopScorersContentPro
       {/* Header */}
       <header className="border-b border-border bg-card px-4 pb-3 pt-12">
         <h1 className="text-xl font-bold uppercase tracking-tight text-foreground">Artilharia</h1>
-        <p className="mt-0.5 text-xs text-muted-foreground">Goleadores e Garcons</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">Goleadores e Garçons</p>
       </header>
 
       {/* Tabs */}
@@ -57,7 +57,7 @@ export function TopScorersContent({ topGoals, topAssists }: TopScorersContentPro
               : "border-transparent text-muted-foreground hover:text-foreground"
           )}
         >
-          Assistencias
+          Assistências
         </button>
       </div>
 
@@ -74,7 +74,7 @@ export function TopScorersContent({ topGoals, topAssists }: TopScorersContentPro
         {/* List */}
         {isEmpty ? (
           <div className="py-16 text-center text-sm text-muted-foreground">
-            Nenhuma estatistica registrada ainda.
+            Nenhuma estatística registrada ainda.
           </div>
         ) : (
           <div className="divide-y divide-border/50">

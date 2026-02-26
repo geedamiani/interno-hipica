@@ -38,7 +38,21 @@ export function MatchesContent({ rounds, matches }: MatchesContentProps) {
 
   const activeRound = rounds[roundIndex]
   const roundMatches = activeRound
-    ? matches.filter((m) => m.round_id === activeRound.id)
+    ? matches
+        .filter((m) => m.round_id === activeRound.id)
+        .sort((a, b) => {
+          const timeA = a.match_time ?? "99:99"
+          const timeB = b.match_time ?? "99:99"
+
+          if (timeA !== timeB) {
+            return timeA.localeCompare(timeB)
+          }
+
+          const fieldA = a.field_number ?? Number.POSITIVE_INFINITY
+          const fieldB = b.field_number ?? Number.POSITIVE_INFINITY
+
+          return fieldA - fieldB
+        })
     : []
 
   const goBack = () => setRoundIndex((i) => Math.max(0, i - 1))
@@ -131,7 +145,7 @@ export function MatchesContent({ rounds, matches }: MatchesContentProps) {
                           </span>
                         </div>
                       ) : (
-                        <span className="font-mono text-2xl font-bold text-muted-foreground">
+                        <span className="font-sans text-lg font-bold text-[rgba(151,168,181,1)]">
                           {match.match_time ? formatTime(match.match_time) : "x"}
                         </span>
                       )}

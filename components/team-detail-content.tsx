@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { TeamBadge } from "@/components/team-badge"
 import { cn } from "@/lib/utils"
@@ -33,6 +34,8 @@ function formatDate(dateStr: string) {
 
 export function TeamDetailContent({ team, players, standings, matches, playerEvents }: TeamDetailContentProps) {
   const playerStats = new Map<string, { goals: number; assists: number; yellowCards: number; redCards: number }>()
+  const router = useRouter()
+
   playerEvents.forEach((e) => {
     const pid = e.player_id
     if (!pid) return
@@ -48,17 +51,21 @@ export function TeamDetailContent({ team, players, standings, matches, playerEve
     <main className="bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card px-4 pb-4 pt-12">
-        <Link href="/times" className="flex items-center gap-1 text-xs font-medium text-primary">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="flex items-center gap-1 text-xs font-medium text-primary"
+        >
           <ArrowLeft className="h-4 w-4" />
-          Times
-        </Link>
+          Voltar
+        </button>
         <div className="mt-3 flex items-center gap-3">
           <TeamBadge
             name={team.name}
             shortName={team.short_name}
             primaryColor={team.primary_color}
             logoUrl={team.logo_url}
-            size="lg"
+            size="xl"
           />
           <div>
             <h1 className="text-lg font-bold text-foreground">{team.name}</h1>
@@ -111,7 +118,7 @@ export function TeamDetailContent({ team, players, standings, matches, playerEve
         </div>
         {players.length === 0 ? (
           <p className="py-8 text-center text-xs text-muted-foreground">
-            Elenco ainda nao cadastrado.
+            Elenco ainda não cadastrado.
           </p>
         ) : (
           <table className="w-full text-xs">

@@ -2,14 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Trophy, CalendarDays, Target, Users } from "lucide-react"
+import { Trophy, CalendarDays, Target } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/", label: "Tabela", icon: Trophy },
+  { href: "/", label: "Classificação", icon: Trophy },
   { href: "/jogos", label: "Jogos", icon: CalendarDays },
   { href: "/artilharia", label: "Artilharia", icon: Target },
-  { href: "/times", label: "Times", icon: Users },
 ]
 
 export function BottomNav() {

@@ -18,14 +18,15 @@ const sizeMap = {
   xl: { container: "h-16 w-16", icon: "h-8 w-8" },
 }
 
-export function TeamBadge({ name, logoUrl, size = "md", className }: TeamBadgeProps) {
+export function TeamBadge({ name, shortName, logoUrl, size = "md", className }: TeamBadgeProps) {
   const s = sizeMap[size]
+  const altText = (shortName && shortName.trim()) || name
 
   if (logoUrl) {
     return (
       <img
         src={logoUrl}
-        alt={name}
+        alt={altText}
         className={cn("shrink-0 object-contain", s.container, className)}
       />
     )

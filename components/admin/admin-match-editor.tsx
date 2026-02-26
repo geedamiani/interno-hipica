@@ -31,9 +31,9 @@ const NO_PLAYER = "__none__"
 const eventTypes = [
   { value: "goal", label: "Gol" },
   { value: "own_goal", label: "Gol Contra" },
-  { value: "assist", label: "Assistencia" },
-  { value: "yellow_card", label: "Cartao Amarelo" },
-  { value: "red_card", label: "Cartao Vermelho" },
+  { value: "assist", label: "Assistência" },
+  { value: "yellow_card", label: "Cartão Amarelo" },
+  { value: "red_card", label: "Cartão Vermelho" },
 ]
 
 interface MatchEvent {
