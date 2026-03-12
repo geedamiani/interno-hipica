@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -60,13 +59,13 @@ interface Props {
 }
 
 
-export function AdminTournamentEditor({ tournament, categories, teams: initialTeams, allTeams, stages, rounds, matches }: Props) {
-  const router = useRouter()
+export function AdminTournamentEditor({ tournament, categories, teams: initialTeams, allTeams, stages, rounds, matches: initialMatches }: Props) {
   const [isPending, startTransition] = useTransition()
   const supabase = createClient()
 
   const [activeTab, setActiveTab] = useState<TabKey>("jogos")
   const [teams, setTeams] = useState(initialTeams)
+  const [matchList, setMatchList] = useState(initialMatches)
 
   // ====== INFO TAB STATE ======
   const [year, setYear] = useState(tournament.year.toString())
@@ -101,7 +100,6 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
       }).eq("id", tournament.id)
       if (error) { toast.error("Erro: " + error.message); return }
       toast.success("Torneio atualizado")
-      router.refresh()
     })
   }
 
@@ -191,7 +189,6 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
 
     setTeams((prev) => prev.filter((t) => t.tournamentTeamId !== tournamentTeamId))
     toast.success("Time removido do torneio")
-    startTransition(() => router.refresh())
   }
 
   async function handleUpdateGroup(tournamentTeamId: string, group: string) {
@@ -205,7 +202,7 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
     if (!newMatch.home_team_id || !newMatch.away_team_id) { toast.error("Selecione os dois times"); return }
     if (newMatch.home_team_id === newMatch.away_team_id) { toast.error("Times devem ser diferentes"); return }
     const round = newMatch.round_id ? rounds.find((r) => r.id === newMatch.round_id) : null
-    const { error } = await supabase.from("matches").insert({
+    const { data: inserted, error } = await supabase.from("matches").insert({
       tournament_id: tournament.id,
       home_team_id: newMatch.home_team_id,
       away_team_id: newMatch.away_team_id,
@@ -215,19 +212,19 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
       round_id: newMatch.round_id || null,
       stage_id: round?.stage_id || null,
       status: "scheduled",
-    })
-    if (error) { toast.error("Erro: " + error.message); return }
+    }).select("*, home_team:teams!matches_home_team_id_fkey(id, name, short_name, primary_color, logo_url), away_team:teams!matches_away_team_id_fkey(id, name, short_name, primary_color, logo_url), rounds(round_number, name, stages(name))").single()
+    if (error || !inserted) { toast.error("Erro: " + error?.message); return }
+    setMatchList((prev) => [...prev, inserted as Match])
     toast.success("Partida adicionada")
     setNewMatch({ home_team_id: "", away_team_id: "", match_date: "", match_time: "", field_number: "", round_id: "" })
     setAddingMatch(false)
-    startTransition(() => router.refresh())
   }
 
   async function handleDeleteMatch(matchId: string) {
     const { error } = await supabase.from("matches").delete().eq("id", matchId)
     if (error) { toast.error("Erro: " + error.message); return }
+    setMatchList((prev) => prev.filter((m) => m.id !== matchId))
     toast.success("Partida removida")
-    startTransition(() => router.refresh())
   }
 
   const groupedTeams = teams.reduce<Record<string, TournamentTeam[]>>((acc, team) => {
@@ -237,7 +234,7 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
     return acc
   }, {})
 
-  const matchesByRound = matches.reduce<Record<string, Match[]>>((acc, m) => {
+  const matchesByRound = matchList.reduce<Record<string, Match[]>>((acc, m) => {
     const roundName = m.rounds ? `${m.rounds.name || `Rodada ${m.rounds.round_number}`}` : "Sem rodada"
     if (!acc[roundName]) acc[roundName] = []
     acc[roundName].push(m)
@@ -564,7 +561,7 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
             </div>
           )}
 
-          {matches.length === 0 ? (
+          {matchList.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
               <CalendarDays className="h-8 w-8" />
               <p className="text-sm">Nenhuma partida cadastrada.</p>

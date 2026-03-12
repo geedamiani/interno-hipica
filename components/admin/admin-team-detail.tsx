@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { TeamBadge } from "@/components/team-badge"
@@ -24,7 +24,7 @@ interface Props {
 
 export function AdminTeamDetail({ team }: Props) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const [isSaving, setIsSaving] = useState(false)
   const supabase = createClient()
 
   const [editing, setEditing] = useState(false)
@@ -33,15 +33,16 @@ export function AdminTeamDetail({ team }: Props) {
   const [teamLogo, setTeamLogo] = useState(team.logo_url || "")
 
   async function handleSave() {
+    setIsSaving(true)
     const { error } = await supabase.from("teams").update({
       name: teamName,
       short_name: teamShort || null,
       logo_url: teamLogo || null,
     }).eq("id", team.id)
+    setIsSaving(false)
     if (error) { toast.error("Erro ao salvar"); return }
     toast.success("Time atualizado")
     setEditing(false)
-    startTransition(() => router.refresh())
   }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -55,7 +56,6 @@ export function AdminTeamDetail({ team }: Props) {
     await supabase.from("teams").update({ logo_url: urlData.publicUrl }).eq("id", team.id)
     setTeamLogo(urlData.publicUrl)
     toast.success("Logo atualizado")
-    startTransition(() => router.refresh())
   }
 
   async function handleDeleteLogo() {
@@ -63,7 +63,6 @@ export function AdminTeamDetail({ team }: Props) {
     if (error) { toast.error("Erro"); return }
     setTeamLogo("")
     toast.success("Logo removido")
-    startTransition(() => router.refresh())
   }
 
   async function handleDelete() {
@@ -113,7 +112,7 @@ export function AdminTeamDetail({ team }: Props) {
               <Input value={teamShort} onChange={(e) => setTeamShort(e.target.value)} maxLength={4} />
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave} disabled={isPending}>
+              <Button size="sm" onClick={handleSave} disabled={isSaving}>
                 <Save className="mr-1.5 h-3.5 w-3.5" /> Salvar
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancelar</Button>
