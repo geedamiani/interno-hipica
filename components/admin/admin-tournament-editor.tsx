@@ -42,9 +42,9 @@ type Match = Tables<"matches"> & {
 type TabKey = "info" | "times" | "jogos"
 
 const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
-  { key: "info", label: "Info", icon: Shield },
-  { key: "times", label: "Times", icon: Users },
   { key: "jogos", label: "Jogos", icon: CalendarDays },
+  { key: "times", label: "Times", icon: Users },
+  { key: "info", label: "Info", icon: Shield },
 ]
 
 const GROUPS = ["A", "B", "C", "D", "E", "F"]
@@ -59,27 +59,22 @@ interface Props {
   matches: Match[]
 }
 
-function slugify(text: string) {
-  return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
-}
 
 export function AdminTournamentEditor({ tournament, categories, teams: initialTeams, allTeams, stages, rounds, matches }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const supabase = createClient()
 
-  const [activeTab, setActiveTab] = useState<TabKey>("info")
+  const [activeTab, setActiveTab] = useState<TabKey>("jogos")
   const [teams, setTeams] = useState(initialTeams)
 
   // ====== INFO TAB STATE ======
-  const [name, setName] = useState(tournament.name)
   const [year, setYear] = useState(tournament.year.toString())
   const [semester, setSemester] = useState(tournament.semester.toString())
   const [categoryId, setCategoryId] = useState(tournament.category_id || "")
   const [status, setStatus] = useState(tournament.status || "draft")
   const [startDate, setStartDate] = useState(tournament.start_date || "")
   const [endDate, setEndDate] = useState(tournament.end_date || "")
-  const [location, setLocation] = useState(tournament.location || "")
 
   // ====== TEAMS TAB STATE ======
   const [showAddTeam, setShowAddTeam] = useState(false)
@@ -97,15 +92,12 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
   async function handleSaveInfo() {
     startTransition(async () => {
       const { error } = await supabase.from("tournaments").update({
-        name: name.trim(),
-        slug: slugify(name.trim()),
         year: parseInt(year),
         semester: parseInt(semester),
         category_id: categoryId || null,
         status,
         start_date: startDate || null,
         end_date: endDate || null,
-        location: location.trim() || null,
       }).eq("id", tournament.id)
       if (error) { toast.error("Erro: " + error.message); return }
       toast.success("Torneio atualizado")
@@ -294,10 +286,6 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
       {/* ====== INFO TAB ====== */}
       {activeTab === "info" && (
         <div className="flex flex-col gap-4 rounded-xl bg-card p-4">
-          <div>
-            <Label className="text-xs">Nome</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Ano</Label>
@@ -345,10 +333,6 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
               <Label className="text-xs">Data fim</Label>
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
-          </div>
-          <div>
-            <Label className="text-xs">Local</Label>
-            <Input value={location} onChange={(e) => setLocation(e.target.value)} />
           </div>
           <Button onClick={handleSaveInfo} disabled={isPending}>
             <Save className="mr-1.5 h-4 w-4" />
