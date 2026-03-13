@@ -72,7 +72,7 @@ export function AdminTeamsList({ teams: initial }: Props) {
             </div>
             <div>
               <Label className="text-xs">Sigla</Label>
-              <Input value={newShort} onChange={(e) => setNewShort(e.target.value)} placeholder="Ex: ABC" maxLength={4} />
+              <Input value={newShort} onChange={(e) => setNewShort(e.target.value)} placeholder="Ex: ABC" maxLength={5} />
             </div>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleCreate}><Plus className="mr-1 h-3.5 w-3.5" />Criar</Button>

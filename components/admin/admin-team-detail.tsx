@@ -109,7 +109,7 @@ export function AdminTeamDetail({ team }: Props) {
             </div>
             <div>
               <Label className="text-xs">Sigla</Label>
-              <Input value={teamShort} onChange={(e) => setTeamShort(e.target.value)} maxLength={4} />
+              <Input value={teamShort} onChange={(e) => setTeamShort(e.target.value)} maxLength={5} />
             </div>
             <div className="flex gap-2">
               <Button size="sm" onClick={handleSave} disabled={isSaving}>

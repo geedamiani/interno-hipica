@@ -417,7 +417,7 @@ export function AdminTournamentEditor({ tournament, categories, teams: initialTe
                   </div>
                   <div>
                     <Label className="text-xs">Sigla</Label>
-                    <Input value={newTeamShort} onChange={(e) => setNewTeamShort(e.target.value)} placeholder="Ex: ABC" maxLength={4} />
+                    <Input value={newTeamShort} onChange={(e) => setNewTeamShort(e.target.value)} placeholder="Ex: ABC" maxLength={5} />
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" onClick={handleCreateAndAddTeam}><Plus className="mr-1 h-3.5 w-3.5" />Criar e Adicionar</Button>
